@@ -4,7 +4,7 @@ cat > auto_rejoin.sh << 'EOF'
 WEBHOOK_URL="https://discord.com/api/webhooks/1484573967997206678/Tpix_g8c4U-uaknycIFNUZ3t5UN26rzOq6DNimebAjecDtAdDzwJhAXLZUKRcfwAzZXF"
 
 # ===== SELECT ACTIVE GROUP HERE =====
-ACTIVE_GROUP=2
+ACTIVE_GROUP=3
 
 # ===== SERVER GROUP PRESETS =====
 
