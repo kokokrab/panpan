@@ -308,9 +308,9 @@ while true; do
       am start -a android.intent.action.VIEW -d "$server"
       sleep 8
 
-      current_app=$(dumpsys window | grep -E 'mCurrentFocus')
+      current_app=$(dumpsys activity activities | grep mResumedActivity)
 
-      if echo "$current_app" | grep -qi "roblox"; then
+      if echo "$current_app" | grep -qi "com.roblox.client"; then
         echo "Roblox detected ✅"
         joined=true
         break
