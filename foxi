@@ -326,7 +326,7 @@ while true; do
       send_webhook "**[$GROUP_NAME]** ❌ Failed to join server **($index/$total)**"
     fi
 
-    sleep 720
+    sleep 420
     index=$((index+1))
   done
 done
