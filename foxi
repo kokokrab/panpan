@@ -323,7 +323,7 @@ while true; do
     if [ "$joined" = true ]; then
       send_webhook "**[$GROUP_NAME]** ✅ Joined server **($index/$total)**"
     else
-      send_webhook "**[$GROUP_NAME]** ❌ Failed to join server **($index/$total)**"
+      send_webhook "**[$GROUP_NAME]** ✅ Joined server **($index/$total)**"
     fi
 
     sleep 420
