@@ -1,7 +1,4 @@
-cat > auto_rejoin.sh << 'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
-
-echo "STARTED"
 
 WEBHOOK_URL="https://discord.com/api/webhooks/1484573967997206678/Tpix_g8c4U-uaknycIFNUZ3t5UN26rzOq6DNimebAjecDtAdDzwJhAXLZUKRcfwAzZXF"
 
@@ -55,21 +52,20 @@ https://www.roblox.com/share?code=3b3bcd1be96e734fb5a1eb00c2dd4530&type=Server
 https://www.roblox.com/share?code=8b7417b278721144a6e36eef46174920&type=Server
 "
 
-# ===== SELECT GROUP =====
-
-echo "Select a group to run:"
-echo "1) $GROUP_1_NAME"
-echo "2) $GROUP_2_NAME"
-echo "3) $GROUP_3_NAME"
-echo "4) $GROUP_4_NAME"
-echo "5) $GROUP_5_NAME"
-echo "6) $GROUP_6_NAME"
-echo "7) $GROUP_7_NAME"
-echo "8) $GROUP_8_NAME"
+# ===== SELECT GROUP (INTERACTIVE) =====
 
 while true; do
-  echo -n "Enter group number (1-8): "
-  read ACTIVE_GROUP
+  echo "Select a group to run:"
+  echo "1) $GROUP_1_NAME"
+  echo "2) $GROUP_2_NAME"
+  echo "3) $GROUP_3_NAME"
+  echo "4) $GROUP_4_NAME"
+  echo "5) $GROUP_5_NAME"
+  echo "6) $GROUP_6_NAME"
+  echo "7) $GROUP_7_NAME"
+  echo "8) $GROUP_8_NAME"
+
+  read -p "Enter group number (1-8): " ACTIVE_GROUP
 
   if [[ "$ACTIVE_GROUP" =~ ^[1-8]$ ]]; then
     break
@@ -78,25 +74,26 @@ while true; do
   fi
 done
 
-# ===== LOAD GROUP =====
+# ===== VALIDATION =====
 
 GROUP_NAME_VAR="GROUP_${ACTIVE_GROUP}_NAME"
 GROUP_SERVERS_VAR="GROUP_${ACTIVE_GROUP}_SERVERS"
 
+if [ -z "${!GROUP_NAME_VAR}" ]; then
+  echo "Invalid ACTIVE_GROUP ($ACTIVE_GROUP). Defaulting to Group 1."
+  ACTIVE_GROUP=1
+  GROUP_NAME_VAR="GROUP_1_NAME"
+  GROUP_SERVERS_VAR="GROUP_1_SERVERS"
+fi
+
+# ===== LOAD SELECTED GROUP =====
+
 GROUP_NAME="${!GROUP_NAME_VAR}"
 servers_raw="${!GROUP_SERVERS_VAR}"
 
-# safer parsing (Termux-friendly)
-servers=()
-while IFS= read -r line; do
-  [ -n "$line" ] && servers+=("$line")
-done <<< "$servers_raw"
+readarray -t servers < <(printf "%s\n" "$servers_raw" | sed '/^\s*$/d')
 
-total=${#servers[@]}
-
-echo "Loaded $total servers from [$GROUP_NAME]"
-
-# ===== WEBHOOK =====
+# ===== WEBHOOK FUNCTION =====
 
 send_webhook() {
   local message="$1"
@@ -107,13 +104,15 @@ send_webhook() {
   "$WEBHOOK_URL" > /dev/null 2>&1
 }
 
+total=${#servers[@]}
+
+echo "Loaded $total servers from [$GROUP_NAME]"
 send_webhook "**[$GROUP_NAME]** 🚀 Started with $total servers"
 
 # ===== MAIN LOOP =====
 
 while true; do
   index=1
-
   for server in "${servers[@]}"; do
     echo "Switching to ($index/$total)"
     echo "DEBUG: $server"
@@ -147,11 +146,10 @@ while true; do
     if [ "$joined" = true ]; then
       send_webhook "**[$GROUP_NAME]** ✅ Joined server **($index/$total)**"
     else
-      send_webhook "**[$GROUP_NAME]** ❌ Failed server **($index/$total)**"
+      send_webhook "**[$GROUP_NAME]** ❌ Failed to join server **($index/$total)**"
     fi
 
     sleep 720
     index=$((index+1))
   done
 done
-EOF
