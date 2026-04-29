@@ -1,3 +1,4 @@
+cat > auto_rejoin.sh << 'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
 
 WEBHOOK_URL="https://discord.com/api/webhooks/1484573967997206678/Tpix_g8c4U-uaknycIFNUZ3t5UN26rzOq6DNimebAjecDtAdDzwJhAXLZUKRcfwAzZXF"
@@ -160,3 +161,4 @@ while true; do
     index=$((index+1))
   done
 done
+EOF
