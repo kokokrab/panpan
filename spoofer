@@ -69,4 +69,4 @@ else
 fi
 
 EOF
-chmod +x ~/.termux/boot/00_spoofer.sh
+chmod +x ~/.termux/boot/00_spoofer.sh && echo "✅ 00_spoofer.sh installed to auto-boot"
