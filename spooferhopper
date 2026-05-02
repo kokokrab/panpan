@@ -1,1 +1,65 @@
+cat > spoofer.sh << 'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
 
+LOG="$HOME/install.log"
+SPOOFER_URL="https://raw.githubusercontent.com/Fluxyyy333/redfinger-wintercode/main/spoofer.apk"
+DELTA_SERIAL="${1:-0d53eeeecba69355:00918b9b}"
+
+R=$'\033[0m'; G=$'\033[0;32m'; E=$'\033[0;31m'; Y=$'\033[0;33m'; W=$'\033[1;37m'
+
+ok()  { echo -e "  ${G}✓${R} $1" | tee -a "$LOG"; }
+err() { echo -e "  ${E}✗${R} $1" | tee -a "$LOG"; }
+run() { echo -e "  ${Y}>${R} $1" | tee -a "$LOG"; }
+
+echo -e "\n  ${W}Delta Spoofer${R}"
+run "Download + install spoofer vault..."
+curl -fsSL --retry 3 "$SPOOFER_URL" -o "/sdcard/Download/spoofer.apk" 2>> "$LOG"
+
+if [ -s "/sdcard/Download/spoofer.apk" ]; then
+  su -c "pm install -r /sdcard/Download/spoofer.apk" >> "$LOG" 2>&1
+  ok "spoofer.apk installed"
+else
+  err "Download spoofer gagal"
+fi
+
+RESETPROP="/data/local/tmp/resetprop"
+SPOOFER_PKG="com.stealth.vault"
+
+# Split android_id and serial
+if echo "$DELTA_SERIAL" | grep -q ':'; then
+  AID_TARGET="${DELTA_SERIAL%%:*}"
+  SER_TARGET="${DELTA_SERIAL##*:}"
+else
+  AID_TARGET="$DELTA_SERIAL"
+  SER_TARGET="$DELTA_SERIAL"
+fi
+
+APK_LINE=$(su -c "pm path $SPOOFER_PKG" 2>/dev/null)
+if [ -n "$APK_LINE" ]; then
+  APK_DIR=$(dirname "${APK_LINE#package:}")
+  LIB=$(su -c "find \"$APK_DIR\" -name 'libresetprop.so' 2>/dev/null" | head -1)
+
+  if [ -n "$LIB" ]; then
+    su -c "cp \"$LIB\" \"$RESETPROP\" && chmod 755 \"$RESETPROP\""
+
+    su -c "$RESETPROP ro.serialno $SER_TARGET" 2>/dev/null
+    su -c "$RESETPROP ro.boot.serialno $SER_TARGET" 2>/dev/null
+    su -c "settings put secure android_id $AID_TARGET" 2>/dev/null
+
+    ACTUAL_SER=$(su -c "getprop ro.serialno" 2>/dev/null)
+    ACTUAL_AID=$(su -c "settings get secure android_id" 2>/dev/null)
+
+    if [ "$ACTUAL_SER" = "$SER_TARGET" ] && [ "$ACTUAL_AID" = "$AID_TARGET" ]; then
+      ok "HWID spoof VERIFIED: aid=$AID_TARGET ser=$SER_TARGET"
+    else
+      err "HWID MISMATCH! expected aid=$AID_TARGET ser=$SER_TARGET got aid=$ACTUAL_AID ser=$ACTUAL_SER"
+    fi
+  else
+    err "libresetprop.so not found in spoofer APK"
+  fi
+else
+  err "Spoofer APK not installed"
+fi
+
+EOF
+chmod +x spoofer.sh
