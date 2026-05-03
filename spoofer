@@ -1,4 +1,4 @@
-mkdir -p ~/.termux/boot && cat > ~/.termux/boot/00_spoofer.sh << 'EOF'
+mkdir -p ~/.termux/boot && cat > ~/.termux/boot/spoofer.sh << 'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
 
 LOG="$HOME/install.log"
@@ -69,4 +69,4 @@ else
 fi
 
 EOF
-chmod +x ~/.termux/boot/00_spoofer.sh && echo "✅ 00_spoofer.sh installed to auto-boot"
+chmod +x ~/.termux/boot/spoofer.sh && echo "✅ spoofer.sh installed to auto-boot"
