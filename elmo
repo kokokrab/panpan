@@ -5,9 +5,9 @@ getgenv().Config = {
         SyncConfig = false, 
         GroupName = "", -- Group name for organizing accounts on dashboard
     },
-    BabyFarm = false, -- Does baby farm
+    BabyFarm = true, -- Does baby farm
     PetFarm = {
-        Enabled = true, -- Enables the Pet Farm
+        Enabled = false, -- Enables the Pet Farm
         FarmEggs = true, -- If true, equips eggs to hatch them. If false, equips regular pets
         BuyEggs = true, -- If FarmEggs is true and no eggs in inventory, buy eggs automatically
         EggTypes = {"endangered_2026_endangered_egg","pet_recycler_2025_crystal_egg"}, -- Which eggs to equip ({} = any egg, or {"cracked_egg", "royal_egg"} for specific)
