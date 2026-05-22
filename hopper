@@ -280,7 +280,7 @@ while true; do
       send_webhook "**[$GROUP_NAME]** ✅ Joined server **($index/$total)**"
     fi
 
-    sleep 670
+    sleep 360
     index=$((index+1))
   done
 done
