@@ -16,7 +16,7 @@ getgenv().Config = {
         FarmUntilFullGrown = true, -- If true, selects pets that aren't full grown first
         PrioritizeFriendship = false, -- If true, selects pets with higher friendship level first
         SelectiveFarm = true, -- If true, only farm pets in SelecatedPetTypes list
-        SelectedPetTypes = {"sugarfest_2026_mochi_meow","endangered_2026_sea_turtle","endangered_2026_blue_whale","pet_progression_2026_purrowl"}, -- Pet IDs to farm when SelectiveFarm is true (e.g., {"dog", "cat"})
+        SelectedPetTypes = {"soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to farm when SelectiveFarm is true (e.g., {"dog", "cat"})
     },
     EventFarm = {
         CandyCliff = false, -- Automatically complete Candy Cliff event tasks and buys a chissle
@@ -92,6 +92,10 @@ getgenv().Config = {
                 neon = {},
                 mega = {},
             },
+            soggy_spring_2026_unicorn_ducky = {
+                neon = {6},
+                mega = {},
+            },
         },
     },
     AutoNeon = {
@@ -110,7 +114,7 @@ getgenv().Config = {
     },
     AutoPotion = {
         Enabled = true, -- Use age potions on pets to level them up
-        SelectedPets = {"sugarfest_2026_mochi_meow","endangered_2026_sea_turtle","endangered_2026_blue_whale","pet_progression_2026_purrowl"}, -- Pet IDs to use potions on (empty = does nothing)
+        SelectedPets = {"soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to use potions on (empty = does nothing)
         PotionVersionFilter = {},
     },
     AutoBuy = {
@@ -134,8 +138,8 @@ getgenv().Config = {
     },
     IdleProgression = {
         Enabled = true, -- Put pets in pet pen for idle leveling
-        SelectedPets = {"endangered_2026_endangered_egg"}, -- Pet IDs to put in pet pen (empty = use all)
-        ExcludedPets = {"sugarfest_2026_gumball_caterpillar","admin_abuse_egg_2026_egg","pet_recycler_2025_crystal_egg","penguins_2025_dango_penguins","food_pets_2026_dragonfruit_fox","endangered_2026_silverback_gorilla","lss_2026_glormy_crab","sugarfest_2026_mochi_meow","endangered_2026_sea_turtle","endangered_2026_blue_whale","pet_progression_2026_purrowl","admin_abuse_2025_sushi_penguin","admin_abuse_egg_2026_robot_chicken","soggy_spring_2026_strawberry_shortcake_ducky","soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to never put in pet pen
+        SelectedPets = {"soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to put in pet pen (empty = use all)
+        ExcludedPets = {"sugarfest_2026_gumball_caterpillar","admin_abuse_egg_2026_egg","pet_recycler_2025_crystal_egg","penguins_2025_dango_penguins","food_pets_2026_dragonfruit_fox","endangered_2026_silverback_gorilla","lss_2026_glormy_crab","sugarfest_2026_mochi_meow","endangered_2026_sea_turtle","endangered_2026_blue_whale","pet_progression_2026_purrowl","admin_abuse_2025_sushi_penguin","admin_abuse_egg_2026_robot_chicken","soggy_spring_2026_strawberry_shortcake_ducky"}, -- Pet IDs to never put in pet pen
         PriorityOrder = {"regular"}, -- Order: first = highest priority for pen slots (e.g. {"neon", "regular", "mega"})
     },
     Webhook = {
