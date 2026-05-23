@@ -96,6 +96,11 @@ getgenv().Config = {
                 neon = {6},
                 mega = {},
             },
+            soggy_spring_2026_strawberry_shortcake_ducky = {
+                regular = {},
+                neon = {},
+                mega = {},
+            },
         },
     },
     AutoNeon = {
