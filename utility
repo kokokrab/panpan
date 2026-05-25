@@ -42,5 +42,5 @@ getgenv().Utility = {
             ToggleKey = "RightShift", -- Key to toggle UI visibility
         },
     };
-getgenv().scriptkey="QLSIiqPstotIfTIhVWXQVDmLPhjVzmOO"
+getgenv().scriptkey="GGVsvmzesNwAASjQfnZilOOFCZZapDhO"
 loadstring(game:HttpGet("https://zekehub.com/scripts/AdoptMe/Utility.lua"))()
