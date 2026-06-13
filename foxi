@@ -6,7 +6,7 @@ getgenv().Config = {
         GroupName = "", -- Group name for organizing accounts on dashboard
     },
     BabyFarm = true, -- Does baby farm
-    PetFarm = {
+     PetFarm = {
         Enabled = true, -- Enables the Pet Farm
         FarmEggs = true, -- If true, equips eggs to hatch them. If false, equips regular pets
         BuyEggs = false, -- If FarmEggs is true and no eggs in inventory, buy eggs automatically
