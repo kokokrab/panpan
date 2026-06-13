@@ -16,7 +16,7 @@ getgenv().Config = {
         FarmUntilFullGrown = true, -- If true, selects pets that aren't full grown first
         PrioritizeFriendship = false, -- If true, selects pets with higher friendship level first
         SelectiveFarm = true, -- If true, only farm pets in SelecatedPetTypes list
-        SelectedPetTypes = {"journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- Pet IDs to farm when SelectiveFarm is true (e.g., {"dog", "cat"})
+        SelectedPetTypes = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- Pet IDs to farm when SelectiveFarm is true (e.g., {"dog", "cat"})
     },
     EventFarm = {
         CandyCliff = false, -- Automatically complete Candy Cliff event tasks and buys a chissle
@@ -29,7 +29,7 @@ getgenv().Config = {
         Usernames = {"ValerieAvrill","PakuwonMallSBY","ValerieAvrills","FoxiNoHesi","FoxiRaccoonita","kehadiranjuara","ikatantakdir","bimbinganrasi","hartaberkilauex","vstarsemesta","vmaxklimaks","amouageofficial","alphathetaxdjaz","balipureseasalt"},
         TradeMode = "specific",
         Categories = {"pets"},
-        Items = {"sugarfest_2026_dark_choccybunny","sugarfest_2026_mochi_meow","sugarfest_2026_easter_bunny","penguins_2025_dango_penguins","food_pets_2026_dragonfruit_fox","endangered_2026_silverback_gorilla","endangered_2026_sea_turtle","endangered_2026_blue_whale","pet_progression_2026_purrowl","lss_2026_glormy_crab","admin_abuse_2025_sushi_penguin","admin_abuse_egg_2026_robot_chicken","pet_recycler_2025_crystal_egg","soggy_spring_2026_strawberry_shortcake_ducky","soggy_spring_2026_unicorn_ducky","admin_abuse_egg_2026_egg","journey_2026_bison","journey_2026_nurse_shark","journey_2026_pilot_gull"},
+        Items = {"sugarfest_2026_dark_choccybunny","sugarfest_2026_mochi_meow","sugarfest_2026_easter_bunny","penguins_2025_dango_penguins","food_pets_2026_dragonfruit_fox","endangered_2026_silverback_gorilla","endangered_2026_sea_turtle","endangered_2026_blue_whale","pet_progression_2026_purrowl","lss_2026_glormy_crab","admin_abuse_2025_sushi_penguin","admin_abuse_egg_2026_robot_chicken","pet_recycler_2025_crystal_egg","soggy_spring_2026_strawberry_shortcake_ducky","soggy_spring_2026_unicorn_ducky","admin_abuse_egg_2026_egg","journey_2026_bison","journey_2026_nurse_shark","journey_2026_pilot_gull","journey_2026_sheepdog_duck"},
         ItemCounts = {},
         GlobalPetFilter = {
             Versions = {},
@@ -113,13 +113,17 @@ getgenv().Config = {
                 neon = {6},
                 mega = {},
             },
+            journey_2026_sheepdog_duck = {
+                neon = {6},
+                mega = {},
+            },
         },
     },
     AutoNeon = {
         Enabled = true, -- Enable auto neon/mega fusion
         MakeMega = true, -- Fuse neons into mega neons
         NeonAll = false, -- Neon everything possible
-        SelectedPets = {"journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- {} when NeonAll = true, otherwise {"dog", "cat"} etc
+        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- {} when NeonAll = true, otherwise {"dog", "cat"} etc
         MaxPerType = {}, -- {} = unlimited, {dog = 2, cat = 1} = limits per pet type
     },
     Settings = {
@@ -131,7 +135,7 @@ getgenv().Config = {
     },
     AutoPotion = {
         Enabled = true, -- Use age potions on pets to level them up
-        SelectedPets = {"journey_2026_pilot_gull","journey_2026_nurse_shark","soggy_spring_2026_unicorn_ducky","journey_2026_bison"}, -- Pet IDs to use potions on (empty = does nothing)
+        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","soggy_spring_2026_unicorn_ducky","journey_2026_bison"}, -- Pet IDs to use potions on (empty = does nothing)
         PotionVersionFilter = {},
     },
     AutoBuy = {
@@ -151,11 +155,11 @@ getgenv().Config = {
         Enabled = true, -- Toggle auto recycling on/off
         RarityFilter = {common = {"regular","neon","mega"}, uncommon = {"regular", "neon", "mega"}, rare = {"regular", "neon", "mega"}, ultra_rare = {"regular", "neon", "mega"}},
         AgeFilter = {}, -- Empty = all ages, or specific ages e.g. {1, 2, 3, 4, 5, 6} (1=Newborn, 6=Full Grown)
-        ExcludedPets = {"journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to never recycle e.g. {"dog", "cat", "shadow_dragon"}
+        ExcludedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to never recycle e.g. {"dog", "cat", "shadow_dragon"}
     },
     IdleProgression = {
         Enabled = true, -- Put pets in pet pen for idle leveling
-        SelectedPets = {"journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to put in pet pen (empty = use all)
+        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to put in pet pen (empty = use all)
         ExcludedPets = {"sugarfest_2026_gumball_caterpillar","admin_abuse_egg_2026_egg","pet_recycler_2025_crystal_egg","penguins_2025_dango_penguins","food_pets_2026_dragonfruit_fox","endangered_2026_silverback_gorilla","lss_2026_glormy_crab","sugarfest_2026_mochi_meow","endangered_2026_sea_turtle","endangered_2026_blue_whale","pet_progression_2026_purrowl","admin_abuse_2025_sushi_penguin","admin_abuse_egg_2026_robot_chicken","soggy_spring_2026_strawberry_shortcake_ducky"}, -- Pet IDs to never put in pet pen
         PriorityOrder = {"regular"}, -- Order: first = highest priority for pen slots (e.g. {"neon", "regular", "mega"})
     },
