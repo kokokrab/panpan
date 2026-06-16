@@ -18,10 +18,6 @@ getgenv().Config = {
         SelectiveFarm = true, -- If true, only farm pets in SelecatedPetTypes list
         SelectedPetTypes = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- Pet IDs to farm when SelectiveFarm is true (e.g., {"dog", "cat"})
     },
-    EventFarm = {
-        CandyCliff = false, -- Automatically complete Candy Cliff event tasks and buys a chissle
-        MochiNail = true, -- Automatically complete Mochi Nail event and buys the tool needed
-    },
     AutoTrade = {
         Enabled = true,
         AutoAcceptTrades = false,
