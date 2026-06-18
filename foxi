@@ -119,7 +119,7 @@ getgenv().Config = {
         Enabled = true, -- Enable auto neon/mega fusion
         MakeMega = true, -- Fuse neons into mega neons
         NeonAll = false, -- Neon everything possible
-        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- {} when NeonAll = true, otherwise {"dog", "cat"} etc
+        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- {} when NeonAll = true, otherwise {"dog", "cat"} etc
         MaxPerType = {}, -- {} = unlimited, {dog = 2, cat = 1} = limits per pet type
     },
     Settings = {
@@ -131,7 +131,7 @@ getgenv().Config = {
     },
     AutoPotion = {
         Enabled = true, -- Use age potions on pets to level them up
-        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","soggy_spring_2026_unicorn_ducky","journey_2026_bison"}, -- Pet IDs to use potions on (empty = does nothing)
+        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","soggy_spring_2026_unicorn_ducky","journey_2026_bison","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- Pet IDs to use potions on (empty = does nothing)
         PotionVersionFilter = {},
     },
     AutoBuy = {
