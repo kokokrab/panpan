@@ -16,14 +16,14 @@ getgenv().Config = {
      PetFarm = {
         Enabled = true, -- Enables the Pet Farm
         FarmEggs = true, -- If true, equips eggs to hatch them. If false, equips regular pets
-        BuyEggs = true, -- If FarmEggs is true and no eggs in inventory, buy eggs automatically
+        BuyEggs = false, -- If FarmEggs is true and no eggs in inventory, buy eggs automatically
         EggTypes = {"endangered_2026_endangered_egg"}, -- Which eggs to equip ({} = any egg, or {"cracked_egg", "royal_egg"} for specific)
         BuyEggType = "endangered_2026_endangered_egg", -- Which egg to buy when BuyEggs is true ("any" or specific egg ID)
         MaxPets = 1, -- How many pets to equip at once (1 = free, 2 = requires Robux gamepass)
         FarmUntilFullGrown = true, -- If true, selects pets that aren't full grown first
         PrioritizeFriendship = false, -- If true, selects pets with higher friendship level first
         SelectiveFarm = true, -- If true, only farm pets in SelecatedPetTypes list
-        SelectedPetTypes = {"summer_2026_rainbow_trout","journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- Pet IDs to farm when SelectiveFarm is true (e.g., {"dog", "cat"})
+        SelectedPetTypes = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- Pet IDs to farm when SelectiveFarm is true (e.g., {"dog", "cat"})
     },
     AutoTrade = {
         Enabled = true,
@@ -120,17 +120,13 @@ getgenv().Config = {
                 neon = {6},
                 mega = {},
             },
-            summer_2026_rainbow_trout = {
-                neon = {6},
-                mega = {},
-            },
         },
     },
     AutoNeon = {
         Enabled = true, -- Enable auto neon/mega fusion
         MakeMega = true, -- Fuse neons into mega neons
         NeonAll = false, -- Neon everything possible
-        SelectedPets = {"summer_2026_rainbow_trout","journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- {} when NeonAll = true, otherwise {"dog", "cat"} etc
+        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- {} when NeonAll = true, otherwise {"dog", "cat"} etc
         MaxPerType = {}, -- {} = unlimited, {dog = 2, cat = 1} = limits per pet type
     },
     Settings = {
@@ -147,8 +143,8 @@ getgenv().Config = {
     },
     AutoBuy = {
         Enabled = true, -- Automatically buy items from shops
-        SelectedItems = {"summer_2026_fishing_bait","pet_recycler_2025_crystal_egg"}, -- Item IDs to buy
-        BuyAmounts = {}, -- How many of each item to buy. Example: {5, 10} buys 5 cracked_eggs and 10 sandwiches. Empty {} buys infinite of each item. If there are more items than amounts, remaining items default to infinite.
+        SelectedItems = {"summer_2026_fishing_bait","pet_recycler_2025_crystal_egg","soggy_spring_2026_rubber_ducky_box","summer_2026_monster_fishing_bait"}, -- Item IDs to buy
+        BuyAmounts = {10, 999, 999, 999}, -- How many of each item to buy. Example: {5, 10} buys 5 cracked_eggs and 10 sandwiches. Empty {} buys infinite of each item. If there are more items than amounts, remaining items default to infinite.
     },
     AutoPay = {
         Enabled = false, -- Send bucks to another player
@@ -166,7 +162,7 @@ getgenv().Config = {
     },
     IdleProgression = {
         Enabled = true, -- Put pets in pet pen for idle leveling
-        SelectedPets = {"summer_2026_rainbow_trout","journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to put in pet pen (empty = use all)
+        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","journey_2026_bison","soggy_spring_2026_unicorn_ducky"}, -- Pet IDs to put in pet pen (empty = use all)
         ExcludedPets = {"sugarfest_2026_gumball_caterpillar","admin_abuse_egg_2026_egg","pet_recycler_2025_crystal_egg","penguins_2025_dango_penguins","food_pets_2026_dragonfruit_fox","endangered_2026_silverback_gorilla","lss_2026_glormy_crab","sugarfest_2026_mochi_meow","endangered_2026_sea_turtle","endangered_2026_blue_whale","pet_progression_2026_purrowl","admin_abuse_2025_sushi_penguin","admin_abuse_egg_2026_robot_chicken","soggy_spring_2026_strawberry_shortcake_ducky"}, -- Pet IDs to never put in pet pen
         PriorityOrder = {"regular"}, -- Order: first = highest priority for pen slots (e.g. {"neon", "regular", "mega"})
     },
