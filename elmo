@@ -1,11 +1,18 @@
 -- This Is Elmo
 getgenv().Config = {
     Dashboard = {
-        Enabled = false, -- Connect to Adopt Me dashboard To Control Script/View Stats (https://zekehub.com/dashboard/adoptme)
+        Enabled = true, -- Connect to Adopt Me dashboard To Control Script/View Stats (https://zekehub.com/dashboard/adoptme)
         SyncConfig = false, 
-        GroupName = "", -- Group name for organizing accounts on dashboard
+        GroupName = "Elmo", -- Group name for organizing accounts on dashboard
     },
     BabyFarm = true, -- Does baby farm
+    AutoCertificate = false, -- Auto use Pet Handler Pro Certificate when less than 30 days remaining
+    EventFarm = {
+        Fishing = {
+            Enabled = true,       -- auto uses the bait and catches fish
+            AutoUpgradeRod = true, -- bronze -> silver -> gold as fish count allows
+        },
+     },
      PetFarm = {
         Enabled = true, -- Enables the Pet Farm
         FarmEggs = true, -- If true, equips eggs to hatch them. If false, equips regular pets
@@ -140,7 +147,7 @@ getgenv().Config = {
     },
     AutoBuy = {
         Enabled = true, -- Automatically buy items from shops
-        SelectedItems = {"pet_recycler_2025_crystal_egg"}, -- Item IDs to buy
+        SelectedItems = {"summer_2026_fishing_bait","pet_recycler_2025_crystal_egg"}, -- Item IDs to buy
         BuyAmounts = {}, -- How many of each item to buy. Example: {5, 10} buys 5 cracked_eggs and 10 sandwiches. Empty {} buys infinite of each item. If there are more items than amounts, remaining items default to infinite.
     },
     AutoPay = {
