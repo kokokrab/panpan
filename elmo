@@ -138,7 +138,7 @@ getgenv().Config = {
     },
     AutoPotion = {
         Enabled = true, -- Use age potions on pets to level them up
-        SelectedPets = {"summer_2026_rainbow_trout","journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","soggy_spring_2026_unicorn_ducky","journey_2026_bison","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- Pet IDs to use potions on (empty = does nothing)
+        SelectedPets = {"journey_2026_sheepdog_duck","journey_2026_pilot_gull","journey_2026_nurse_shark","soggy_spring_2026_unicorn_ducky","journey_2026_bison","endangered_2026_sea_turtle","endangered_2026_blue_whale"}, -- Pet IDs to use potions on (empty = does nothing)
         PotionVersionFilter = {},
     },
     AutoBuy = {
