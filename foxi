@@ -16,7 +16,7 @@ getgenv().Config = {
      PetFarm = {
         Enabled = true, -- Enables the Pet Farm
         FarmEggs = true, -- If true, equips eggs to hatch them. If false, equips regular pets
-        BuyEggs = false, -- If FarmEggs is true and no eggs in inventory, buy eggs automatically
+        BuyEggs = true, -- If FarmEggs is true and no eggs in inventory, buy eggs automatically
         EggTypes = {"endangered_2026_endangered_egg"}, -- Which eggs to equip ({} = any egg, or {"cracked_egg", "royal_egg"} for specific)
         BuyEggType = "endangered_2026_endangered_egg", -- Which egg to buy when BuyEggs is true ("any" or specific egg ID)
         MaxPets = 1, -- How many pets to equip at once (1 = free, 2 = requires Robux gamepass)
@@ -148,8 +148,8 @@ getgenv().Config = {
     },
     AutoBuy = {
         Enabled = true, -- Automatically buy items from shops
-        SelectedItems = {"summer_2026_fishing_bait","pet_recycler_2025_crystal_egg","soggy_spring_2026_rubber_ducky_box","summer_2026_monster_fishing_bait"}, -- Item IDs to buy
-        BuyAmounts = {10, 999, 999, 999}, -- How many of each item to buy. Example: {5, 10} buys 5 cracked_eggs and 10 sandwiches. Empty {} buys infinite of each item. If there are more items than amounts, remaining items default to infinite.
+        SelectedItems = {"summer_2026_fishing_bait","pet_recycler_2025_crystal_egg","summer_2026_monster_fishing_bait"}, -- Item IDs to buy
+        BuyAmounts = {10, 999, 999}, -- How many of each item to buy. Example: {5, 10} buys 5 cracked_eggs and 10 sandwiches. Empty {} buys infinite of each item. If there are more items than amounts, remaining items default to infinite.
     },
     AutoPay = {
         Enabled = false, -- Send bucks to another player
