@@ -127,6 +127,11 @@ getgenv().Config = {
                 neon = {},
                 mega = {},
             },
+            summer_2026_rainbow_trout = {
+                regular = {},
+                neon = {},
+                mega = {},
+            },
         },
     },
     AutoNeon = {
