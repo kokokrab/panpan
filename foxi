@@ -11,8 +11,8 @@ getgenv().Config = {
         Fishing = {
             Enabled = true,       -- auto uses the bait and catches fish
             AutoUpgradeRod = true, -- bronze -> silver -> gold as fish count allows
-            StopKarpAtMonsterGoal = true, -- Stop buying Karp Bait at 75 bronze + 35 silver + 15 gold fish (Tealwood Monster Bait). Only enable ONE goal at a time
-            StopKarpAtRainbowGoal = false, -- Stop buying Karp Bait at 1 rainbow fish (Rainbow Trout). Only enable ONE goal at a time
+            StopKarpAtMonsterGoal = false, -- Stop buying Karp Bait at 75 bronze + 35 silver + 15 gold fish (Tealwood Monster Bait). Only enable ONE goal at a time
+            StopKarpAtRainbowGoal = true, -- Stop buying Karp Bait at 1 rainbow fish (Rainbow Trout). Only enable ONE goal at a time
         },
      },
      PetFarm = {
@@ -123,6 +123,11 @@ getgenv().Config = {
                 mega = {},
             },
             summer_2026_lake_monster = {
+                regular = {},
+                neon = {},
+                mega = {},
+            },
+            summer_2026_rainbow_trout = {
                 regular = {},
                 neon = {},
                 mega = {},
