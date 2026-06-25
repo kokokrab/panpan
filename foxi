@@ -123,7 +123,7 @@ getgenv().Config = {
                 mega = {},
             },
             summer_2026_lake_monster = {
-                regular = {6},
+                regular = {},
                 neon = {},
                 mega = {},
             },
