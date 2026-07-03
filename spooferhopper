@@ -2,7 +2,7 @@ cat > spoofer.sh << 'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
 
 LOG="$HOME/install.log"
-SPOOFER_URL="https://raw.githubusercontent.com/Fluxyyy333/redfinger-wintercode/main/spoofer.apk"
+SPOOFER_URL="https://github.com/kokokrab/panpan/raw/refs/heads/main/spoofer.apk"
 DELTA_SERIAL="${1:-0d53eeeecba69355:00918b9b}"
 
 R=$'\033[0m'; G=$'\033[0;32m'; E=$'\033[0;31m'; Y=$'\033[0;33m'; W=$'\033[1;37m'
