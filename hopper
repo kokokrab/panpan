@@ -94,7 +94,10 @@ https://www.roblox.com/share?code=da35f131d358214ca1fe853ce750016a&type=Server
 https://www.roblox.com/share?code=a69d2463d5a8b946b285d85ada986132&type=Server
 https://www.roblox.com/share?code=f66a544a49e1284c8cf54aa6dd063904&type=Server
 "
-
+GROUP_5_NAME="GaG2"
+GROUP_5_SERVERS="
+https://www.roblox.com/share?code=ea66401508d25d40a58aeeee7f1b415a&type=Server
+"
 # ===== SELECT GROUP (INTERACTIVE) =====
 
 while true; do
@@ -103,6 +106,7 @@ while true; do
   echo "2) $GROUP_2_NAME"
   echo "3) $GROUP_3_NAME"
   echo "4) $GROUP_4_NAME"
+  echo "5) $GROUP_4_NAME"
 
   read -p "Enter group number (1-14): " ACTIVE_GROUP
 
