@@ -1,0 +1,2 @@
+script_key = "HOSHI-KEY-11c387be0cfd9338"
+loadstring(game:HttpGet("https://hoshihub.site/loader.lua"))()
