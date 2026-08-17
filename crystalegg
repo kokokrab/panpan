@@ -25,7 +25,7 @@
             Usernames = {"ValerieAvrill","PakuwonMallSBY","ValerieAvrills","FoxiNoHesi","FoxiRaccoonita","kehadiranjuara","ikatantakdir","bimbinganrasi","hartaberkilauex","vstarsemesta","vmaxklimaks","amouageofficial","alphathetaxdjaz","balipureseasalt"}, -- Players to send trades to (e.g. {"player1", "player2"})
             TradeMode = "specific", -- "all" = everything in categories, "specific" = only Items list
             Categories = {"pets"}, -- {"pets", "toys", "food", "transport", "gifts", "stickers", "pet_accessories", "roleplay"}
-            Items = {"pet_recycler_2025_crystal_egg","admin_abuse_egg_2026_egg"}, -- Item IDs when TradeMode = "specific" (e.g. {"dog", "cat", "turtle"})
+            Items = {"pet_recycler_2025_crystal_egg","admin_abuse_egg_2026_egg","endangered_2026_silverback_gorilla"}, -- Item IDs when TradeMode = "specific" (e.g. {"dog", "cat", "turtle"})
             ItemCounts = {}, -- Max count per item matching Items order (e.g. {30, 12, 5} = 30 dogs, 12 cats, 5 turtles. {} = unlimited all)
             GlobalPetFilter = {
                 Versions = {}, -- {} = all versions, {"regular", "neon", "mega"} = only these. Fallback for pets NOT in PetFilters
@@ -68,12 +68,12 @@
             Enabled = true, -- Toggle auto recycling on/off
             RarityFilter = {common = {"mega"}, uncommon = {"regular", "neon", "mega"}, rare = {"regular", "neon", "mega"}, ultra_rare = {"regular", "neon", "mega"}, legendary = {"regular", "neon", "mega"}},
             AgeFilter = {}, -- Empty = all ages, or specific ages e.g. {1, 2, 3, 4, 5, 6} (1=Newborn, 6=Full Grown)
-            ExcludedPets = {"basic_egg_2022_ant","dog", "cat"}, -- Pet IDs to never recycle e.g. {"dog", "cat", "shadow_dragon"}
+            ExcludedPets = {"basic_egg_2022_ant","dog", "cat","endangered_2026_silverback_gorilla"}, -- Pet IDs to never recycle e.g. {"dog", "cat", "shadow_dragon"}
         },
         IdleProgression = {
             Enabled = true, -- Put pets in pet pen for idle leveling
             SelectedPets = {"cracked_egg","basic_egg_2022_mouse"}, -- Pet IDs to put in pet pen (empty = use all)
-            ExcludedPets = {"pet_recycler_2025_crystal_egg","basic_egg_2022_ant","dog","cat"}, -- Pet IDs to never put in pet pen
+            ExcludedPets = {"pet_recycler_2025_crystal_egg","basic_egg_2022_ant","dog","cat","endangered_2026_silverback_gorilla"}, -- Pet IDs to never put in pet pen
             PriorityOrder = {}, -- Order: first = highest priority for pen slots (e.g. {"neon", "regular", "mega"})
             PenVersionFilter = {}, -- Per-pet version filter e.g. {dog = {"neon"}, cat = {"regular"}} - empty = all versions
         },
