@@ -8,8 +8,8 @@
         AutoCertificate = false, -- Auto use Pet Handler Pro Certificate when less than 30 days remaining
         PetFarm = {
             Enabled = true, -- Enables the Pet Farm
-            FarmEggs = false, -- If true, equips eggs to hatch them. If false, equips regular pets
-            BuyEggs = false, -- If FarmEggs is true and no eggs in inventory, buy eggs automatically
+            FarmEggs = true, -- If true, equips eggs to hatch them. If false, equips regular pets
+            BuyEggs = true, -- If FarmEggs is true and no eggs in inventory, buy eggs automatically
             EggTypes = {"cracked_egg"}, -- Which eggs to equip ({} = any egg, or {"cracked_egg", "royal_egg"} for specific)
             BuyEggType = "cracked_egg", -- Which egg to buy when BuyEggs is true ("any" or specific egg ID)
             MaxPets = 1, -- How many pets to equip at once (1 = free, 2 = requires Robux gamepass)
@@ -25,7 +25,7 @@
             Usernames = {"ValerieAvrill","PakuwonMallSBY","ValerieAvrills","FoxiNoHesi","FoxiRaccoonita","kehadiranjuara","ikatantakdir","bimbinganrasi","hartaberkilauex","vstarsemesta","vmaxklimaks","amouageofficial","alphathetaxdjaz","balipureseasalt"}, -- Players to send trades to (e.g. {"player1", "player2"})
             TradeMode = "specific", -- "all" = everything in categories, "specific" = only Items list
             Categories = {"pets"}, -- {"pets", "toys", "food", "transport", "gifts", "stickers", "pet_accessories", "roleplay"}
-            Items = {"snow_2022_ribbon_seal","pet_recycler_2025_crystal_egg","admin_abuse_egg_2026_egg","endangered_2026_silverback_gorilla","pet_recycler_2025_emberlight"}, -- Item IDs when TradeMode = "specific" (e.g. {"dog", "cat", "turtle"})
+            Items = {"pet_recycler_2025_crystal_egg","admin_abuse_egg_2026_egg","endangered_2026_silverback_gorilla","pet_recycler_2025_emberlight"}, -- Item IDs when TradeMode = "specific" (e.g. {"dog", "cat", "turtle"})
             ItemCounts = {}, -- Max count per item matching Items order (e.g. {30, 12, 5} = 30 dogs, 12 cats, 5 turtles. {} = unlimited all)
             GlobalPetFilter = {
                 Versions = {}, -- {} = all versions, {"regular", "neon", "mega"} = only these. Fallback for pets NOT in PetFilters
@@ -41,7 +41,7 @@
         AutoNeon = {
             Enabled = true, -- Enable auto neon/mega fusion
             MakeMega = true, -- Fuse neons into mega neons
-            NeonAll = false, -- Neon everything possible
+            NeonAll = true, -- Neon everything possible
             SelectedPets = {"basic_egg_2022_mouse"}, -- {} when NeonAll = true, otherwise {"dog", "cat"} etc
             MaxPerType = {}, -- {} = unlimited, {dog = 2, cat = 1} = limits per pet type
         },
@@ -52,7 +52,7 @@
         },
         AutoBuy = {
             Enabled = true, -- Automatically buy items from shops
-            SelectedItems = {"pet_recycler_2025_crystal_egg","snow_2022_ribbon_seal"}, -- Item IDs to buy
+            SelectedItems = {"pet_recycler_2025_crystal_egg","cracked_egg"}, -- Item IDs to buy
             BuyAmounts = {}, -- How many of each item to buy. Example: {5, 10} buys 5 cracked_eggs and 10 sandwiches. Empty {} buys infinite of each item. If there are more items than amounts, remaining items default to infinite.
         },
         AutoPay = {
@@ -68,12 +68,12 @@
             Enabled = true, -- Toggle auto recycling on/off
             RarityFilter = {common = {"mega"}, uncommon = {"regular", "neon", "mega"}, rare = {"regular", "neon", "mega"}, ultra_rare = {"regular", "neon", "mega"}, legendary = {"regular", "neon", "mega"}},
             AgeFilter = {}, -- Empty = all ages, or specific ages e.g. {1, 2, 3, 4, 5, 6} (1=Newborn, 6=Full Grown)
-            ExcludedPets = {"snow_2022_ribbon_seal","basic_egg_2022_ant","dog", "cat","endangered_2026_silverback_gorilla","pet_recycler_2025_emberlight"}, -- Pet IDs to never recycle e.g. {"dog", "cat", "shadow_dragon"}
+            ExcludedPets = {"basic_egg_2022_ant","dog", "cat","endangered_2026_silverback_gorilla","pet_recycler_2025_emberlight"}, -- Pet IDs to never recycle e.g. {"dog", "cat", "shadow_dragon"}
         },
         IdleProgression = {
             Enabled = true, -- Put pets in pet pen for idle leveling
             SelectedPets = {"cracked_egg","basic_egg_2022_mouse"}, -- Pet IDs to put in pet pen (empty = use all)
-            ExcludedPets = {"snow_2022_ribbon_seal","pet_recycler_2025_crystal_egg","basic_egg_2022_ant","dog","cat","endangered_2026_silverback_gorilla","pet_recycler_2025_emberlight"}, -- Pet IDs to never put in pet pen
+            ExcludedPets = {"pet_recycler_2025_crystal_egg","basic_egg_2022_ant","dog","cat","endangered_2026_silverback_gorilla","pet_recycler_2025_emberlight"}, -- Pet IDs to never put in pet pen
             PriorityOrder = {}, -- Order: first = highest priority for pen slots (e.g. {"neon", "regular", "mega"})
             PenVersionFilter = {}, -- Per-pet version filter e.g. {dog = {"neon"}, cat = {"regular"}} - empty = all versions
         },
