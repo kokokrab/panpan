@@ -16,26 +16,6 @@ https://www.roblox.com/share?code=103b90743503c449a21095f264514166&type=Server
 https://www.roblox.com/share?code=081d2854b29f2045bdd31353f7d40293&type=Server
 https://www.roblox.com/share?code=92f61b5fb70a2541bf5573b57f2fd9a5&type=Server
 https://www.roblox.com/share?code=6fc4144d5ed05b4fa8bd3edf682b3f40&type=Server
-https://www.roblox.com/share?code=dab883134f48844c814b24975cd78589&type=Server
-https://www.roblox.com/share?code=69815c56ca587a45bdddafcfa099df4a&type=Server
-https://www.roblox.com/share?code=a1becc31dcb9e14dbe5f9fa222e50ec0&type=Server
-https://www.roblox.com/share?code=16086c0eb6c82a43bc873ff90b1593f0&type=Server
-https://www.roblox.com/share?code=8e32b8bdedd8774e968c7d1973100418&type=Server
-https://www.roblox.com/share?code=89452930d1f408498bc464ee90b48546&type=Server
-https://www.roblox.com/share?code=029b1025266c5045bff264c5bcf0a1c3&type=Server
-https://www.roblox.com/share?code=530bce6d5d13324ca07374f8ab302fa8&type=Server
-https://www.roblox.com/share?code=66ba406e2736b9459933f38c95c19126&type=Server
-https://www.roblox.com/share?code=5c5e495ea8f06d4f943f43515ca89e6c&type=Server
-https://www.roblox.com/share?code=c9b5ed981053f846b83fd00cffaf9c26&type=Server
-https://www.roblox.com/share?code=aa4d2967f803b54ea2db031569c0bcf5&type=Server
-https://www.roblox.com/share?code=9bf1b6e12cd4ec4a8129e182ee3c177b&type=Server
-https://www.roblox.com/share?code=9d3b50eb210dd5409a269a89810b4e59&type=Server
-https://www.roblox.com/share?code=3c5086c314789e4fa6cba22365297324&type=Server
-https://www.roblox.com/share?code=c8461aed1ca7214bb39bf25658da1f71&type=Server
-https://www.roblox.com/share?code=938bd344be5c8540a9a93342f9ac43d5&type=Server
-https://www.roblox.com/share?code=da35f131d358214ca1fe853ce750016a&type=Server
-https://www.roblox.com/share?code=a69d2463d5a8b946b285d85ada986132&type=Server
-https://www.roblox.com/share?code=f66a544a49e1284c8cf54aa6dd063904&type=Server
 "
 
 GROUP_2_NAME="Hopper-2"
@@ -207,7 +187,7 @@ while true; do
       send_webhook "**[$GROUP_NAME]** ✅ Joined server **($index/$total)**"
     fi
 
-    sleep 900
+    sleep 700
     index=$((index+1))
   done
 done
