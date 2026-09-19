@@ -15,14 +15,14 @@ getgenv().VO_CONFIG = {
 
     -- === PET PEN ===
     PetPen = true,
-    CustomPenEggs = {"Cracked Egg"},
-    CustomPenPets = {},
-    PrioritizePetPenTypes = {},  -- "Egg", "Normal", "Neon" (empty = all)
+    CustomPenEggs = {},
+    CustomPenPets = {"Ant"},
+    PrioritizePetPenTypes = {"Normal"},  -- "Egg", "Normal", "Neon" (empty = all)
 
     -- === PET RELEASER ===
     PetReleaser = true,
     ReleasePets = {},       -- Whitelist: names to release (empty = all)
-    ExcludeReleasePets = {"Normal Ant", "Neon Ant"}, -- Blacklist: base names or prefixed like ReleasePets ("Neon Dog", "Normal Cat", "Mega FG X")
+    ExcludeReleasePets = {"Normal Ant"}, -- Blacklist: base names or prefixed like ReleasePets ("Neon Dog", "Normal Cat", "Mega FG X")
     ReleaseTypes = {},      -- "Mega", "Neon", "Normal" (empty = all)
     ReleaseRarities = {},   -- If ReleasePets non-empty: only used for pets NOT named in ReleasePets. If ReleasePets empty: filters all candidates.
     ExcludeRarities = {},   -- Blacklist rarities (pets on ReleasePets by name bypass this)
@@ -30,7 +30,7 @@ getgenv().VO_CONFIG = {
     -- === AGE PETS ===
     AgePets = true,
     AgePetsNames = {"Ant"},
-    AgePetsTypes = {"Normal", "Neon"},  -- "Normal", "Neon", "ALL"
+    AgePetsTypes = {"Normal"},  -- "Normal", "Neon", "ALL"
 
     -- === AUTO FUSE ===
     AutoFuse = true,
@@ -56,7 +56,7 @@ getgenv().VO_CONFIG = {
     AutoTrade = true,
     ReceiverUsernames = {"ValerieAvrill"},
     TradeItemList = {
-      pets = {"Crystal Egg","Gemstone Egg"}
+      pets = {"Crystal Egg", "Gemstone Egg"}
     }, -- Per category: { pets = {"Dog","Neon Cat"}, food = {}, toys = {}, ... } ? use "ALL" in a category to allow that whole category (pets still gated by TradePetType for bare names)
     TradePetType = {"ALL"},       -- Only applies to pets: "ALL", "Mega", "Neon", "Regular", "Neon_FG", "Regular_FG" ? not used for food/toys/etc.; inline prefixes on pet strings (e.g. "Mega Dog") bypass this
 
