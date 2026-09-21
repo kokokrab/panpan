@@ -212,7 +212,7 @@ send_webhook() {
 
 is_roblox_foreground() {
   local activity
-  activity=$(dumpsys activity activities 2>/dev/null) || return 1
+  activity=$("$dumpsys_cmd" activity activities 2>/dev/null) || return 1
   # Android versions differ in the name of the resumed-activity field.
   printf '%s\n' "$activity" |
     grep -E '(mResumedActivity|topResumedActivity)' |
@@ -266,16 +266,27 @@ main() {
     servers+=("$server")
   done <<< "${!servers_var}"
   local total=${#servers[@]} index attempt visible failures=0
+  local inspect_activity=0 dumpsys_cmd='' activity
   (( total > 0 )) || fail 'Selected group has no servers.'
 
   if (( ! dry_run )); then
-    for option in am dumpsys grep sleep; do
-      command -v "$option" >/dev/null 2>&1 || fail "Missing command: $option. Run on Android with activity inspection access."
+    for option in am grep sleep; do
+      command -v "$option" >/dev/null 2>&1 || fail "Missing command: $option. Run on Android in Termux."
     done
     # A permission denial may be printed with a successful exit status.
-    local activity
-    activity=$(dumpsys activity activities 2>&1) || fail 'Cannot inspect Android activities with dumpsys.'
-    [[ $activity != *'Permission Denial'* && $activity != *'Permission denied'* ]] || fail 'Android denied activity inspection. Use an authorized shell with dumpsys access.'
+    dumpsys_cmd=$(command -v dumpsys 2>/dev/null) || dumpsys_cmd=''
+    if [[ -z $dumpsys_cmd && -x /system/bin/dumpsys ]]; then
+      dumpsys_cmd=/system/bin/dumpsys
+    fi
+    if [[ -n $dumpsys_cmd ]] && activity=$("$dumpsys_cmd" activity activities 2>&1); then
+      if [[ $activity != *'Permission Denial'* && $activity != *'Permission denied'* ]] &&
+        printf '%s\n' "$activity" | grep -Eq '(mResumedActivity|topResumedActivity)'; then
+        inspect_activity=1
+      fi
+    fi
+    if (( ! inspect_activity )); then
+      log 'Activity inspection unavailable. Continuing in launch-only mode; foreground and server joins are unverified.'
+    fi
     if (( notify )); then
       [[ $WEBHOOK_URL == https://discord.com/api/webhooks/* ]] || fail 'Set WEBHOOK_URL to your Discord webhook URL.'
       for option in curl jq; do
@@ -303,10 +314,13 @@ main() {
         # Reset foreground each time so an old Roblox activity cannot satisfy the check.
         if am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null 2>&1; then
           sleep "$HOME_DELAY"
-          if ! is_roblox_foreground; then
+          if (( ! inspect_activity )) || ! is_roblox_foreground; then
             if am start -a android.intent.action.VIEW -d "$server" >/dev/null 2>&1; then
               sleep "$LAUNCH_DELAY"
-              if is_roblox_foreground; then
+              if (( ! inspect_activity )); then
+                visible=2
+                break
+              elif is_roblox_foreground; then
                 visible=1
                 break
               fi
@@ -317,8 +331,13 @@ main() {
         (( attempt < MAX_RETRIES )) && sleep "$RETRY_DELAY"
       done
       if (( visible )); then
-        log 'Roblox is in the foreground; server join is unverified.'
-        send_webhook "[$group_name] Roblox foreground ($index/$total); server join unverified"
+        if (( visible == 1 )); then
+          log 'Roblox is in the foreground; server join is unverified.'
+          send_webhook "[$group_name] Roblox foreground ($index/$total); server join unverified"
+        else
+          log 'Launch command sent; foreground and server join are unverified.'
+          send_webhook "[$group_name] Launch command sent ($index/$total); foreground and server join unverified"
+        fi
         # No final dwell is needed when exiting a single pass.
         if (( ! once || index < total )); then sleep "$HOP_DELAY"; fi
       else
