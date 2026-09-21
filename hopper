@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-
-WEBHOOK_URL="https://discord.com/api/webhooks/1484573967997206678/Tpix_g8c4U-uaknycIFNUZ3t5UN26rzOq6DNimebAjecDtAdDzwJhAXLZUKRcfwAzZXF"
+# Android / Termux server launcher. See Hopper.README.md.
 
 # ===== SERVER GROUP PRESETS =====
 
@@ -173,101 +172,169 @@ GROUP_5_NAME="GaG2"
 GROUP_5_SERVERS="
 https://www.roblox.com/share?code=ea66401508d25d40a58aeeee7f1b415a&type=Server
 "
-# ===== SELECT GROUP (INTERACTIVE) =====
+# Environment overrides; webhook notifications are enabled by default.
+HOP_DELAY=${HOP_DELAY:-500}
+HOME_DELAY=${HOME_DELAY:-2}
+LAUNCH_DELAY=${LAUNCH_DELAY:-8}
+RETRY_DELAY=${RETRY_DELAY:-3}
+MAX_RETRIES=${MAX_RETRIES:-3}
+WEBHOOK_URL=${WEBHOOK_URL:-"https://discord.com/api/webhooks/1484573967997206678/Tpix_g8c4U-uaknycIFNUZ3t5UN26rzOq6DNimebAjecDtAdDzwJhAXLZUKRcfwAzZXF"}
 
-while true; do
-  echo "Select a group to run:"
-  echo "1) $GROUP_1_NAME"
-  echo "2) $GROUP_2_NAME"
-  echo "3) $GROUP_3_NAME"
-  echo "4) $GROUP_4_NAME"
-  echo "5) $GROUP_4_NAME"
-
-  read -p "Enter group number (1-14): " ACTIVE_GROUP
-
-  if [[ "$ACTIVE_GROUP" =~ ^([1-9]|1[0-4])$ ]]; then
-    break
-  else
-    echo "Invalid input. Try again."
-  fi
-done
-
-# ===== VALIDATION =====
-
-GROUP_NAME_VAR="GROUP_${ACTIVE_GROUP}_NAME"
-GROUP_SERVERS_VAR="GROUP_${ACTIVE_GROUP}_SERVERS"
-
-if [ -z "${!GROUP_NAME_VAR}" ]; then
-  echo "Invalid ACTIVE_GROUP ($ACTIVE_GROUP). Defaulting to Group 1."
-  ACTIVE_GROUP=1
-  GROUP_NAME_VAR="GROUP_1_NAME"
-  GROUP_SERVERS_VAR="GROUP_1_SERVERS"
-fi
-
-# ===== LOAD SELECTED GROUP =====
-
-GROUP_NAME="${!GROUP_NAME_VAR}"
-servers_raw="${!GROUP_SERVERS_VAR}"
-
-readarray -t servers < <(printf "%s\n" "$servers_raw" | sed '/^\s*$/d')
-
-# ===== WEBHOOK FUNCTION =====
-
-send_webhook() {
-  local message="$1"
-
-  curl --max-time 5 -H "Content-Type: application/json" \
-  -X POST \
-  -d "$(printf '{"content":"%s"}' "$message")" \
-  "$WEBHOOK_URL" > /dev/null 2>&1
+log() { printf '%s\n' "$*"; }
+fail() { printf 'Error: %s\n' "$*" >&2; exit 1; }
+usage() {
+  cat <<'HELP'
+Usage: bash Hopper.sh [--group 1-5] [--once] [--dry-run] [--notify | --no-notify]
+  --group N   Select a group without prompting.
+  --once      Process the selected list once, then exit.
+  --dry-run   Show server order without Android commands, waits, or webhooks.
+  --notify    Enable Discord notifications (default; requires jq/curl).
+  --no-notify Disable Discord notifications.
+Environment: HOP_DELAY=500 HOME_DELAY=2 LAUNCH_DELAY=8 RETRY_DELAY=3 MAX_RETRIES=3
+Foreground detection confirms only that Roblox is visible, not a server join.
+HELP
 }
 
-total=${#servers[@]}
+send_webhook() {
+  (( notify && ! dry_run )) || return 0
+  local payload
+  payload=$(jq -cn --arg content "$1" '{content:$content,allowed_mentions:{parse:[]}}') || {
+    log 'Warning: could not encode notification.' >&2
+    return 0
+  }
+  # Do not retry POSTs: an ambiguous timeout could otherwise duplicate messages.
+  if ! curl --silent --fail --connect-timeout 3 --max-time 5 \
+    -H 'Content-Type: application/json' --data "$payload" \
+    "$WEBHOOK_URL" >/dev/null 2>&1; then
+    log 'Warning: webhook delivery failed; continuing.' >&2
+  fi
+}
 
-echo "Loaded $total servers from [$GROUP_NAME]"
-send_webhook "**[$GROUP_NAME]** 🚀 Started with $total servers"
+is_roblox_foreground() {
+  local activity
+  activity=$(dumpsys activity activities 2>/dev/null) || return 1
+  # Android versions differ in the name of the resumed-activity field.
+  printf '%s\n' "$activity" |
+    grep -E '(mResumedActivity|topResumedActivity)' |
+    grep -Eq 'com\.roblox\.client/'
+}
 
-# ===== MAIN LOOP =====
+main() {
+  local group='' once=0 dry_run=0 notify=1 option value
+  while (( $# )); do
+    case "$1" in
+      --group)
+        (( $# >= 2 )) || fail '--group needs a number.'
+        group=$2; shift 2 ;;
+      --once) once=1; shift ;;
+      --dry-run) dry_run=1; shift ;;
+      --notify) notify=1; shift ;;
+      --no-notify) notify=0; shift ;;
+      -h|--help) usage; return 0 ;;
+      *) fail "Unknown option: $1" ;;
+    esac
+  done
 
-while true; do
-  index=1
-  for server in "${servers[@]}"; do
-    echo "Switching to ($index/$total)"
-    echo "DEBUG: $server"
+  for option in HOP_DELAY HOME_DELAY LAUNCH_DELAY RETRY_DELAY MAX_RETRIES; do
+    value=${!option}
+    [[ $value =~ ^[0-9]{1,6}$ ]] || fail "$option must be an integer from 0 to 999999."
+    printf -v "$option" '%d' "$((10#$value))"
+  done
+  (( MAX_RETRIES > 0 )) || fail 'MAX_RETRIES must be at least 1.'
 
-    send_webhook "**[$GROUP_NAME]** 🔄 Switching server **($index/$total)**"
+  if [[ -z $group ]]; then
+    log 'Select a group:'
+    local n name_var
+    for n in {1..5}; do
+      name_var="GROUP_${n}_NAME"
+      printf '%s) %s\n' "$n" "${!name_var}"
+    done
+    while true; do
+      read -r -p 'Enter group number (1-5): ' group || fail 'No selection received. Use --group N.'
+      [[ $group =~ ^[1-5]$ ]] && break
+      log 'Invalid selection. Enter 1 through 5.'
+    done
+  fi
+  [[ $group =~ ^[1-5]$ ]] || fail 'Group must be 1 through 5.'
+  local name_var="GROUP_${group}_NAME" servers_var="GROUP_${group}_SERVERS"
+  local group_name=${!name_var} server
+  local -a servers=()
+  while IFS= read -r server; do
+    server=${server%$'\r'}
+    [[ $server =~ ^[[:space:]]*$ ]] && continue
+    [[ $server =~ ^https://www\.roblox\.com/share\?code=[[:alnum:]]+\&type=Server$ ]] || fail 'Invalid server URL in preset.'
+    servers+=("$server")
+  done <<< "${!servers_var}"
+  local total=${#servers[@]} index attempt visible failures=0
+  (( total > 0 )) || fail 'Selected group has no servers.'
 
-    am start -a android.intent.action.MAIN -c android.intent.category.HOME
-    sleep 2
+  if (( ! dry_run )); then
+    for option in am dumpsys grep sleep; do
+      command -v "$option" >/dev/null 2>&1 || fail "Missing command: $option. Run on Android with activity inspection access."
+    done
+    # A permission denial may be printed with a successful exit status.
+    local activity
+    activity=$(dumpsys activity activities 2>&1) || fail 'Cannot inspect Android activities with dumpsys.'
+    [[ $activity != *'Permission Denial'* && $activity != *'Permission denied'* ]] || fail 'Android denied activity inspection. Use an authorized shell with dumpsys access.'
+    if (( notify )); then
+      [[ $WEBHOOK_URL == https://discord.com/api/webhooks/* ]] || fail 'Set WEBHOOK_URL to your Discord webhook URL.'
+      for option in curl jq; do
+        command -v "$option" >/dev/null 2>&1 || fail "Missing notification dependency: $option"
+      done
+    fi
+  fi
 
-    MAX_RETRIES=3
-    joined=false
-
-    for ((i=1; i<=MAX_RETRIES; i++)); do
-      echo "Attempt $i to join server"
-
-      am start -a android.intent.action.VIEW -d "$server"
-      sleep 8
-
-      current_app=$(dumpsys activity activities | grep mResumedActivity)
-
-      if echo "$current_app" | grep -qi "com.roblox.client"; then
-        echo "Roblox detected ✅"
-        joined=true
-        break
+  trap 'printf "\nStopped.\n"; exit 130' INT
+  trap 'printf "\nStopped.\n"; exit 143' TERM
+  log "Loaded $total servers from [$group_name]"
+  send_webhook "[$group_name] Started with $total servers"
+  while true; do
+    index=0
+    for server in "${servers[@]}"; do
+      ((index+=1))
+      log "[$group_name] Launching ($index/$total)"
+      if (( dry_run )); then
+        log "$server"
+        continue
+      fi
+      visible=0
+      for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
+        log "Attempt $attempt/$MAX_RETRIES"
+        # Reset foreground each time so an old Roblox activity cannot satisfy the check.
+        if am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null 2>&1; then
+          sleep "$HOME_DELAY"
+          if ! is_roblox_foreground; then
+            if am start -a android.intent.action.VIEW -d "$server" >/dev/null 2>&1; then
+              sleep "$LAUNCH_DELAY"
+              if is_roblox_foreground; then
+                visible=1
+                break
+              fi
+            fi
+          fi
+        fi
+        log 'Launch could not be confirmed.'
+        (( attempt < MAX_RETRIES )) && sleep "$RETRY_DELAY"
+      done
+      if (( visible )); then
+        log 'Roblox is in the foreground; server join is unverified.'
+        send_webhook "[$group_name] Roblox foreground ($index/$total); server join unverified"
+        # No final dwell is needed when exiting a single pass.
+        if (( ! once || index < total )); then sleep "$HOP_DELAY"; fi
       else
-        echo "Join failed ❌ retrying..."
-        sleep 3
+        ((failures+=1))
+        log "Failed to bring Roblox to the foreground ($index/$total)."
+        send_webhook "[$group_name] Launch failed ($index/$total) after $MAX_RETRIES attempts"
+        if (( ! once || index < total )); then sleep "$RETRY_DELAY"; fi
       fi
     done
-
-    if [ "$joined" = true ]; then
-      send_webhook "**[$GROUP_NAME]** ✅ Joined server **($index/$total)**"
-    else
-      send_webhook "**[$GROUP_NAME]** ✅ Joined server **($index/$total)**"
-    fi
-
-    sleep 500
-    index=$((index+1))
+    (( once || dry_run )) && break
   done
-done
+  log "Completed. Failed launches: $failures"
+  (( failures == 0 ))
+}
+
+# Sourcing allows isolated tests without starting the hopper.
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  main "$@"
+fi
