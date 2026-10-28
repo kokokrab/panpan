@@ -108,7 +108,7 @@ GROUP_5_SERVERS="
 https://www.roblox.com/share?code=ea66401508d25d40a58aeeee7f1b415a&type=Server
 "
 # Environment overrides; webhook notifications are enabled by default.
-HOP_DELAY=${HOP_DELAY:-180}
+HOP_DELAY=${HOP_DELAY:-220}
 HOME_DELAY=${HOME_DELAY:-2}
 LAUNCH_DELAY=${LAUNCH_DELAY:-8}
 RETRY_DELAY=${RETRY_DELAY:-3}
