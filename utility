@@ -1,106 +1,1647 @@
-  getgenv().Utility = {
-        AutoPotion = {
-            Enabled = false, -- Start auto potion leveling on load
-            UseAllOnAll = false, -- Use all potions on all pets (highest age first)
-            SelectedPets = {}, -- Specific pet IDs to level e.g. {"dog", "cat"}
-        },
-        AutoNeon = {
-            Enabled = true, -- Start auto neon fusing on load
-            MakeMega = true, -- Make mega neons instead of regular neons
-            SelectedPets = {}, -- Specific pet IDs to fuse e.g. {"dog", "cat"}
-        },
-        AutoTrade = {
-            Enabled = false, -- Start auto trading on load
-            AutoAcceptTrades = true, -- Auto accept trade requests sent TO you
-            AutoLeaveAfterTrades = false, -- Leave/kick once every target has nothing left to receive
-            LeaveDelay = 5, -- Seconds to wait after trades finish before leaving
-            Usernames = {}, -- Receivers to send to e.g. {"player1", "player2"} (also pickable in Trade tab)
-            TradeMode = "all", -- "all" = send everything in Categories | "specific" = only the Items list
-            Categories = {"pets", "toys", "food", "transport", "gifts", "stickers", "pet_accessories"}, -- What to send
-            Items = {}, -- Item IDs/names to send when TradeMode = "specific" e.g. {"dog", "cat", "buffalo"}
-            ItemCounts = {}, -- Max per item per player e.g. {dog = 30, cat = 12} ({} = unlimited)
+-- Standalone Adopt Me Crystal Egg Auto-Trader
+-- Features:
+--   1. Startup & world-entry popup removal (NewsApp Play, SpawnChooser Home, Star Rewards, etc.)
+--   2. Automatically sets & verifies Trading = Everyone
+--   3. Live Crystal Egg counter UI + player selector + Send 100 (in batches of 18) + Auto-Accept toggle
 
-            -- GLOBAL pet filter. Used for ANY pet NOT listed in PetFilters below.
-            GlobalPetFilter = {
-                Versions = {}, -- {} = all versions | or pick any of {"regular", "neon", "mega"}
-                Ages = {}, -- {} = all ages | or pick any of {1,2,3,4,5,6} (6 = full grown). Mega ignores ages
-                -- EXAMPLE - neon full growns + regular full growns, no mega:
-                --   Versions = {"regular", "neon"}, Ages = {6}
-            },
+if getgenv().AutoTrade and type(getgenv().AutoTrade.stop) == "function" then
+    pcall(getgenv().AutoTrade.stop)
+    task.wait(0.25)
+end
+getgenv().AutoTradeRunning = true
 
-            -- PER-PET FILTER. Lets you set exact rules for specific pets.
-            -- Any pet listed here IGNORES GlobalPetFilter completely (only these rules apply to it).
-            --
-            -- FORMAT:  pet_id = { version = { ages } }
-            --   version  -> "regular", "neon" or "mega"
-            --   ages     -> {} = all ages | or pick from {1,2,3,4,5,6}
-            --               1=Newborn 2=Junior 3=Pre-Teen 4=Teen 5=Post-Teen 6=Full Grown
-            --
-            -- RULES:
-            --   - a version you DON'T list = that version is NOT traded for this pet
-            --   - {} after a version = trade ALL ages of that version
-            --   - {6} after a version = trade only full grown of that version
-            --   - mega ALWAYS ignores ages (mega has no age), so just use mega = {}
-            --
-            -- EXAMPLES:
-            --   turtle = { mega = {} }
-            --       -> only mega turtles. regular + neon turtles NOT traded (not listed)
-            --
-            --   dog = { regular = {6}, neon = {} }
-            --       -> full grown regular dogs + ALL neon dogs. mega dogs NOT traded
-            --
-            --   shadow_dragon = { neon = {6}, mega = {} }
-            --       -> full grown neon shadows + all mega shadows. regular NOT traded
-            --
-            --   frost_dragon = { regular = {4,5,6}, neon = {6}, mega = {} }
-            --       -> teen/post-teen/FG regular, FG neon, all mega
-            PetFilters = {
-                -- example_pet = { regular = {6}, neon = {} },
-            },
+-- ===================== CONFIG =====================
+local EGG_KIND = "pet_recycler_2025_crystal_egg"
+local MAX_TRADE_SLOTS = 18
+local DEFAULT_SEND_AMOUNT = 100
+local DEFAULT_AUTO_ACCEPT = true
+local REQUIRE_ITEMS = true -- true = wait until the other player offers >= 1 item before accepting
+local DEFAULT_TIMEOUT = 45
+local OFFER_COOLDOWN = 6
+local UI_NAME = "AutoTradeUI"
+-- ==================================================
 
-            -- Manual Trade-tab filters only (do NOT affect auto trade above)
-            Filters = {
-                Kind = "ALL", -- Show only one item ID, "ALL" = off
-                Type = "ALL", -- "ALL" / "regular" / "neon" / "mega"
-                Rarity = "ALL", -- "ALL" / "common" / "uncommon" / "rare" / "ultra_rare" / "legendary"
-                Search = "", -- Text search, comma separated e.g. "dog, cat, buffalo"
-            },
-        },
-        AutoOpen = {
-            Enabled = false, -- Start auto opening on load
-            Items = {}, -- Item IDs to open e.g. {"gift_box", "cracked_egg"}
-            OpenDelay = 1, -- Seconds between each open (0.5 - 3)
-        },
-       Shop = {
-            Enabled = false, -- Auto buy items on load
-            Items = {}, -- Item IDs to auto buy e.g. {"cracked_egg", "hot_dog_stand"}
-            BuyQuantity = 1, -- How many to buy per purchase (1, 5, 10, 25, 50, 100)
-            BuyDelay = 1, -- Seconds between purchases (0.5 - 3)
-        },
-        AccountManager = {
-            Enabled = false,
-            Tool = "none", -- "yummy", "farmsync", "farmerv5"
-            Yummy = {
-                Action = "completed",
-                Reason = "Done",
-            },
-            FarmSync = {
-                Action = "completed",
-                FromFolderId = "",
-                ToFolderId = "",
-                ChangeWithoutReplacement = false,
-                ConfigId = nil,
-                ApiKey = "",
-            },
-            FarmerV5 = {
-                ApiKey = "", -- FarmerV5 API key (bearer token)
-            },
-        },
-        Settings = {
-            AutoShowUI = true, -- Show UI on script load (false = hidden, use toggle key)
-            Theme = "Dark", -- UI theme: "Dark", "Midnight", "Amoled"
-            ToggleKey = "RightShift", -- Key to toggle UI visibility
-        },
-    };
-getgenv().scriptkey="UnPiCkkpezHAkxwECnhyByHlOMgvvXZi"
-loadstring(game:HttpGet("https://zekehub.com/scripts/AdoptMe/Utility.lua"))()
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+
+local state = {
+    autoAccept = DEFAULT_AUTO_ACCEPT,
+    selectedPlayer = nil,
+    sending = false,
+    cancelSend = false,
+    ready = false,
+    statusText = "Initializing...",
+    eggCount = 0,
+}
+
+local uiRefs = {}
+local uiConnections = {}
+
+local function formatNumber(n)
+    local str = tostring(math.floor(tonumber(n) or 0))
+    local formatted = str:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+    return formatted:gsub("^,", "")
+end
+
+local function setStatus(text, color)
+    state.statusText = tostring(text)
+    if uiRefs.statusLabel then
+        uiRefs.statusLabel.Text = state.statusText
+        if color then
+            uiRefs.statusLabel.TextColor3 = color
+        else
+            uiRefs.statusLabel.TextColor3 = Color3.fromRGB(205, 214, 230)
+        end
+    end
+end
+
+local function notify(text, duration)
+    print("[AutoTrade] " .. text)
+    pcall(StarterGui.SetCore, StarterGui, "SendNotification", {
+        Title = "Crystal Egg Trader",
+        Text = text,
+        Duration = duration or 5,
+    })
+end
+
+local function waitFor(label, callback, timeout)
+    local deadline = os.clock() + (timeout or DEFAULT_TIMEOUT)
+    repeat
+        local ok, result = pcall(callback)
+        if ok and result then return result end
+        task.wait(0.2)
+    until os.clock() >= deadline or not getgenv().AutoTradeRunning
+    error("Timed out waiting for " .. label)
+end
+
+local function child(root, ...)
+    local value = root
+    for _, name in ipairs({ ... }) do
+        value = value and value:FindFirstChild(name)
+    end
+    return value
+end
+
+-- ===================== UI / CLICK HELPERS =====================
+local function clickWrappedButton(button)
+    if not button then return false end
+    for _, signal in ipairs({ button.MouseButton1Click, button.Activated }) do
+        for _, connection in ipairs(getconnections(signal)) do
+            if connection.Function then
+                for _, upvalue in ipairs(getupvalues(connection.Function)) do
+                    if type(upvalue) == "table" and type(upvalue.mouse_button1_click) == "function" then
+                        upvalue.mouse_button1_click()
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    if firesignal then
+        local activatedConnections = getconnections(button.Activated)
+        if #activatedConnections > 0 then
+            firesignal(button.Activated)
+            return true
+        end
+        local clickConnections = getconnections(button.MouseButton1Click)
+        if #clickConnections > 0 then
+            firesignal(button.MouseButton1Click)
+            return true
+        end
+    end
+    for _, signal in ipairs({ button.Activated, button.MouseButton1Click }) do
+        local connections = getconnections(signal)
+        if connections[1] then
+            connections[1]:Fire()
+            return true
+        end
+    end
+    return false
+end
+
+local function visibleButtonByText(root, text)
+    if not root then return nil end
+    for _, button in ipairs(root:GetDescendants()) do
+        if (button:IsA("TextButton") or button:IsA("ImageButton")) and button.Visible then
+            if button:IsA("TextButton") and button.Text == text then return button end
+            for _, descendant in ipairs(button:GetDescendants()) do
+                if descendant:IsA("TextLabel") and descendant.Visible and descendant.Text == text then
+                    return button
+                end
+            end
+        end
+    end
+end
+
+local function visibleDialogButton(text)
+    return visibleButtonByText(LocalPlayer.PlayerGui:FindFirstChild("DialogApp"), text)
+end
+
+local function isActuallyVisible(gui)
+    local current = gui
+    while current and current ~= LocalPlayer.PlayerGui do
+        if current:IsA("GuiObject") and not current.Visible then return false end
+        if current:IsA("LayerCollector") and not current.Enabled then return false end
+        current = current.Parent
+    end
+    return current == LocalPlayer.PlayerGui
+end
+
+local function physicallyClickButton(button)
+    if not button or not isActuallyVisible(button) then return false end
+    local center = button.AbsolutePosition + button.AbsoluteSize / 2
+    local ok = pcall(function()
+        VirtualInputManager:SendMouseButtonEvent(center.X, center.Y, 0, true, game, 0)
+        task.wait(0.06)
+        VirtualInputManager:SendMouseButtonEvent(center.X, center.Y, 0, false, game, 0)
+    end)
+    return ok
+end
+
+local function buttonText(button)
+    if button:IsA("TextButton") and button.Text ~= "" then return button.Text end
+    for _, descendant in ipairs(button:GetDescendants()) do
+        if descendant:IsA("TextLabel") and descendant.Visible and descendant.Text ~= "" then
+            return descendant.Text
+        end
+    end
+    return ""
+end
+
+local function normalizedGuiText(value)
+    return string.gsub(string.lower(tostring(value or "")), "[%s%p]+", "")
+end
+
+local function hasNamedAncestor(instance, fragment)
+    local current = instance
+    fragment = string.lower(fragment)
+    while current and current ~= LocalPlayer.PlayerGui do
+        if string.find(string.lower(current.Name), fragment, 1, true) then return true end
+        current = current.Parent
+    end
+    return false
+end
+
+-- ===================== STARTUP & WORLD ENTRY POPUPS =====================
+local function visibleStarRewardsRoot()
+    for _, root in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
+        local lowerName = string.lower(root.Name)
+        if root:IsA("ScreenGui") and string.find(lowerName, "starreward", 1, true)
+            and isActuallyVisible(root) then
+            for _, descendant in ipairs(root:GetDescendants()) do
+                if descendant:IsA("GuiObject") and isActuallyVisible(descendant)
+                    and descendant.AbsoluteSize.X > 120 and descendant.AbsoluteSize.Y > 80 then
+                    return root
+                end
+            end
+        end
+    end
+end
+
+local function starRewardsCloseButton(root)
+    root = root or visibleStarRewardsRoot()
+    if not root then return nil end
+    local fallback
+    local fallbackY = math.huge
+    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+    for _, button in ipairs(root:GetDescendants()) do
+        if (button:IsA("TextButton") or button:IsA("ImageButton")) and isActuallyVisible(button) then
+            local name = string.lower(button.Name)
+            local text = string.lower(string.gsub(buttonText(button), "^%s*(.-)%s*$", "%1"))
+            if string.find(name, "close", 1, true) or string.find(name, "exit", 1, true)
+                or text == "x" or text == "×" then
+                return button
+            end
+
+            local size = button.AbsoluteSize
+            local position = button.AbsolutePosition
+            local square = size.X >= 24 and size.X <= 90 and size.Y >= 24 and size.Y <= 90
+                and math.abs(size.X - size.Y) <= 18
+            local upperRight = position.X > viewport.X * 0.55 and position.Y < viewport.Y * 0.35
+            if square and upperRight and position.Y < fallbackY then
+                fallback = button
+                fallbackY = position.Y
+            end
+        end
+    end
+    return fallback
+end
+
+local function frequentLocationPromptButton()
+    local dialog = LocalPlayer.PlayerGui:FindFirstChild("DialogApp")
+    if not dialog or not isActuallyVisible(dialog) then return nil end
+    local copy = ""
+    for _, descendant in ipairs(dialog:GetDescendants()) do
+        if descendant:IsA("TextLabel") and isActuallyVisible(descendant) then
+            copy ..= " " .. string.lower(descendant.Text)
+        end
+    end
+    local normalized = string.gsub(copy, "[^%w]+", "")
+    local isFrequentLocationPrompt = string.find(normalized, "youvechosenthisoptionalot", 1, true)
+        and string.find(normalized, "gothereeverytime", 1, true)
+    if not isFrequentLocationPrompt then return nil end
+    return visibleButtonByText(dialog, "Yes") or visibleButtonByText(dialog, "YES")
+end
+
+local function defaultLocationConfirmationButton()
+    local dialog = LocalPlayer.PlayerGui:FindFirstChild("DialogApp")
+    if not dialog or not isActuallyVisible(dialog) then return nil end
+    local copy = ""
+    for _, descendant in ipairs(dialog:GetDescendants()) do
+        if descendant:IsA("TextLabel") and isActuallyVisible(descendant) then
+            copy ..= " " .. string.lower(descendant.Text)
+        end
+    end
+    local normalized = string.gsub(copy, "[^%w]+", "")
+    if not string.find(normalized, "changethisoptionanytimeinyoursettings", 1, true) then return nil end
+    return visibleButtonByText(dialog, "Okay") or visibleButtonByText(dialog, "OK")
+end
+
+local SAFE_POPUP_TEXT = {
+    ["ok"] = true,
+    ["okay"] = true,
+    ["oke"] = true,
+    ["close"] = true,
+    ["tutup"] = true,
+    ["continue"] = true,
+    ["lanjut"] = true,
+    ["lanjutkan"] = true,
+    ["claim"] = true,
+    ["klaim"] = true,
+    ["collect"] = true,
+    ["ambil"] = true,
+    ["skip"] = true,
+    ["lewati"] = true,
+    ["later"] = true,
+    ["nanti"] = true,
+    ["got it"] = true,
+    ["mengerti"] = true,
+    ["awesome"] = true,
+    ["luar biasa"] = true,
+    ["no thanks"] = true,
+    ["tidak, terima kasih"] = true,
+}
+
+local function startupPopupButton()
+    local playerGui = LocalPlayer.PlayerGui
+    local rewardsClose = starRewardsCloseButton()
+    if rewardsClose then return rewardsClose, "star rewards close" end
+    local locationYes = frequentLocationPromptButton()
+    if locationYes then return locationYes, "frequent location yes" end
+    local locationOkay = defaultLocationConfirmationButton()
+    if locationOkay then return locationOkay, "default location okay" end
+    for _, button in ipairs(playerGui:GetDescendants()) do
+        if (button:IsA("TextButton") or button:IsA("ImageButton")) and isActuallyVisible(button) then
+            local root = button:FindFirstAncestorOfClass("ScreenGui")
+            if root and root.Name ~= "TradeApp" and root.Name ~= UI_NAME then
+                local normalized = string.lower(string.gsub(buttonText(button), "^%s*(.-)%s*$", "%1"))
+                normalized = string.gsub(normalized, "[%s!%.]+$", "")
+                if SAFE_POPUP_TEXT[normalized] then return button, normalized end
+
+                local lowerName = string.lower(button.Name)
+                local parentName = string.lower(button.Parent and button.Parent.Name or "")
+                local rootName = string.lower(root.Name)
+                local closeControl = lowerName == "closebutton" or lowerName == "close_button"
+                    or lowerName == "exitbutton" or lowerName == "exit_button"
+                local popupContainer = string.find(parentName, "popup", 1, true)
+                    or string.find(parentName, "modal", 1, true)
+                    or string.find(parentName, "reward", 1, true)
+                    or string.find(parentName, "news", 1, true)
+                    or string.find(rootName, "reward", 1, true)
+                    or string.find(rootName, "daily", 1, true)
+                    or string.find(rootName, "popup", 1, true)
+                    or string.find(rootName, "news", 1, true)
+                if closeControl and popupContainer then return button, button.Name end
+            end
+        end
+    end
+end
+
+local function popupIsGone(button)
+    return not button or not button.Parent or not isActuallyVisible(button)
+end
+
+local function closeStarRewardsApp()
+    local ok, result = pcall(function()
+        local Fsys = require(ReplicatedStorage:WaitForChild("Fsys"))
+        local UIManager = Fsys.load("UIManager")
+        UIManager.set_app_visibility("StarRewardsApp", false)
+        return true
+    end)
+    if not ok then
+        warn("[AutoTrade] Could not close StarRewardsApp through UIManager: " .. tostring(result))
+    end
+    return ok and result
+end
+
+local function dismissStartupPopup(button, label)
+    local root = button and button:FindFirstAncestorOfClass("ScreenGui")
+    local normalizedLabel = string.lower(tostring(label or ""))
+    local isStarRewards = normalizedLabel == "claim" or normalizedLabel == "klaim"
+        or normalizedLabel == "collect" or normalizedLabel == "ambil"
+        or normalizedLabel == "awesome" or normalizedLabel == "luar biasa"
+        or normalizedLabel == "star rewards close"
+        or (root and string.find(string.lower(root.Name), "starreward", 1, true))
+
+    local function fullyDismissed()
+        if isStarRewards then return visibleStarRewardsRoot() == nil end
+        return popupIsGone(button)
+    end
+
+    clickWrappedButton(button)
+    task.wait(0.35)
+    if fullyDismissed() then return true end
+
+    physicallyClickButton(button)
+    task.wait(0.75)
+    if fullyDismissed() then return true end
+
+    if isStarRewards then
+        closeStarRewardsApp()
+        if root and root.Name == "DialogApp" then
+            pcall(function()
+                local UIManager = require(ReplicatedStorage:WaitForChild("Fsys")).load("UIManager")
+                UIManager.set_app_visibility("DialogApp", false)
+            end)
+        end
+        task.wait(0.25)
+        if fullyDismissed() then return true end
+
+        local currentClose = starRewardsCloseButton()
+        if currentClose then
+            clickWrappedButton(currentClose)
+            physicallyClickButton(currentClose)
+            task.wait(0.5)
+        end
+        return visibleStarRewardsRoot() == nil
+    end
+
+    return false
+end
+
+local function closeStartupPopups()
+    local deadline = os.clock() + 30
+    local clearSince
+    local dismissed = 0
+    repeat
+        local button, label = startupPopupButton()
+        if button then
+            clearSince = nil
+            if dismissStartupPopup(button, label) then
+                dismissed += 1
+                print(("[AutoTrade] Dismissed startup popup: %s"):format(label))
+            else
+                warn(("[AutoTrade] Popup did not close after click: %s"):format(label))
+            end
+            task.wait(0.15)
+        else
+            clearSince = clearSince or os.clock()
+            if os.clock() - clearSince >= 3 then
+                if dismissed > 0 then
+                    notify(("Startup popups cleared (%d dismissed)"):format(dismissed))
+                end
+                return
+            end
+            task.wait(0.15)
+        end
+    until os.clock() >= deadline or not getgenv().AutoTradeRunning
+    error("Startup popup cleanup did not reach a stable clear screen")
+end
+
+local function lateStarRewardsUpgradeButton()
+    local rewardsClose = starRewardsCloseButton()
+    if rewardsClose then return rewardsClose, "star rewards close" end
+    local locationYes = frequentLocationPromptButton()
+    if locationYes then return locationYes, "frequent location yes" end
+    local locationOkay = defaultLocationConfirmationButton()
+    if locationOkay then return locationOkay, "default location okay" end
+    for _, button in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+        if (button:IsA("TextButton") or button:IsA("ImageButton")) and isActuallyVisible(button) then
+            local root = button:FindFirstAncestorOfClass("ScreenGui")
+            if root and root.Name ~= UI_NAME then
+                local normalized = string.lower(string.gsub(buttonText(button), "^%s*(.-)%s*$", "%1"))
+                normalized = string.gsub(normalized, "[%s!%.]+$", "")
+                local rootName = string.lower(root.Name)
+
+                if string.find(rootName, "starrewards", 1, true)
+                    and (normalized == "claim" or normalized == "klaim"
+                        or normalized == "collect" or normalized == "ambil") then
+                    return button, normalized
+                end
+
+                if normalized == "awesome" or normalized == "luar biasa" then
+                    local copy = ""
+                    for _, descendant in ipairs(root:GetDescendants()) do
+                        if descendant:IsA("TextLabel") and isActuallyVisible(descendant) then
+                            copy ..= " " .. string.lower(descendant.Text)
+                        end
+                    end
+                    if string.find(copy, "star rewards", 1, true)
+                        and string.find(copy, "upgrade", 1, true) then
+                        return button, normalized
+                    end
+                end
+            end
+        end
+    end
+end
+
+local CachedUIManager
+local function loadUIManager()
+    if CachedUIManager then return CachedUIManager end
+    local oldIdentity = getthreadidentity and getthreadidentity()
+    if setthreadidentity then setthreadidentity(2) end
+    local ok, result = pcall(function()
+        return require(ReplicatedStorage:WaitForChild("Fsys")).load("UIManager")
+    end)
+    if setthreadidentity and oldIdentity then setthreadidentity(oldIdentity) end
+    if ok then CachedUIManager = result end
+    return CachedUIManager
+end
+
+local function closePetDiscoveryApp()
+    local uiMgr = loadUIManager()
+    local discGui = LocalPlayer.PlayerGui:FindFirstChild("PetDiscoveryApp")
+    local isOpen = false
+    if uiMgr and uiMgr.is_visible then
+        local oldIdentity = getthreadidentity and getthreadidentity()
+        if setthreadidentity then setthreadidentity(2) end
+        local ok, vis = pcall(uiMgr.is_visible, "PetDiscoveryApp")
+        if setthreadidentity and oldIdentity then setthreadidentity(oldIdentity) end
+        if ok and vis then isOpen = true end
+    end
+    if not isOpen and discGui and discGui:IsA("ScreenGui") and discGui.Enabled then
+        isOpen = true
+    end
+    if not isOpen then return false end
+
+    if uiMgr and uiMgr.set_app_visibility then
+        local oldIdentity = getthreadidentity and getthreadidentity()
+        if setthreadidentity then setthreadidentity(2) end
+        pcall(uiMgr.set_app_visibility, "PetDiscoveryApp", false)
+        if setthreadidentity and oldIdentity then setthreadidentity(oldIdentity) end
+    end
+
+    task.wait(0.15)
+    discGui = LocalPlayer.PlayerGui:FindFirstChild("PetDiscoveryApp")
+    if discGui and discGui.Enabled then
+        local doneBtn = visibleButtonByText(discGui, "DONE") or visibleButtonByText(discGui, "Done")
+        if doneBtn then
+            clickWrappedButton(doneBtn)
+            physicallyClickButton(doneBtn)
+        end
+    end
+    return true
+end
+
+local function closeStarterPackPopup()
+    local spGui = LocalPlayer.PlayerGui:FindFirstChild("FTUEStarterPackApp")
+    if not spGui or not spGui:IsA("ScreenGui") then return false end
+
+    local closedAny = false
+    local uiMgr = loadUIManager()
+    local app = uiMgr and uiMgr.apps and uiMgr.apps.FTUEStarterPackApp
+    if app and app.splash and app.splash:IsA("GuiObject") and app.splash.Visible then
+        app.splash.Visible = false
+        closedAny = true
+    end
+
+    local popups = spGui:FindFirstChild("Popups")
+    if popups then
+        for _, childGui in ipairs(popups:GetChildren()) do
+            if childGui:IsA("GuiObject") and childGui.Visible then
+                local exitBtn = childGui:FindFirstChild("ExitButton", true)
+                if exitBtn and (exitBtn:IsA("TextButton") or exitBtn:IsA("ImageButton")) then
+                    clickWrappedButton(exitBtn)
+                end
+                if childGui.Visible then
+                    childGui.Visible = false
+                end
+                closedAny = true
+            end
+        end
+    end
+
+    return closedAny
+end
+
+local function watchLateStarRewardsPopup()
+    local warned = false
+    while getgenv().AutoTradeRunning do
+        if closePetDiscoveryApp() then
+            print("[AutoTrade] Closed PetDiscoveryApp popup")
+        end
+        if closeStarterPackPopup() then
+            print("[AutoTrade] Closed FTUEStarterPackApp popup")
+        end
+        local button, label = lateStarRewardsUpgradeButton()
+        if button then
+            if dismissStartupPopup(button, label) then
+                if label == "frequent location yes" then
+                    notify("Set Home as the default location")
+                elseif label == "default location okay" then
+                    notify("Confirmed the Home default setting")
+                else
+                    notify("Closed delayed Star Rewards popup: " .. tostring(label))
+                end
+                warned = false
+            elseif not warned then
+                warn("[AutoTrade] Delayed Star Rewards popup did not close")
+                warned = true
+            end
+            task.wait(0.75)
+        else
+            warned = false
+            task.wait(0.4)
+        end
+    end
+end
+
+local function newsPlayButton()
+    local newsApp = LocalPlayer.PlayerGui:FindFirstChild("NewsApp")
+    if not newsApp then return nil end
+
+    local known = child(newsApp, "EnclosingFrame", "MainFrame", "Buttons", "PlayButton")
+    if known and isActuallyVisible(known) then return known end
+
+    for _, button in ipairs(newsApp:GetDescendants()) do
+        if (button:IsA("TextButton") or button:IsA("ImageButton")) and isActuallyVisible(button) then
+            local normalized = string.lower(buttonText(button))
+            normalized = string.gsub(normalized, "[%s%p]+", "")
+            if normalized == "play" or normalized == "bermain" then return button end
+        end
+    end
+end
+
+local function closeNewsAppDirectly()
+    local ok, errorMessage = pcall(function()
+        local api = ReplicatedStorage:WaitForChild("API", 10)
+        local acceptTerms = api and api:FindFirstChild("MainMenuAPI/AcceptTermsOfServiceAndPrivacyPolicy")
+        if acceptTerms and acceptTerms:IsA("RemoteEvent") then acceptTerms:FireServer() end
+        local UIManager = require(ReplicatedStorage:WaitForChild("Fsys")).load("UIManager")
+        UIManager.set_app_visibility("NewsApp", false)
+    end)
+    if not ok then warn("[AutoTrade] Direct NewsApp close failed: " .. tostring(errorMessage)) end
+    return ok
+end
+
+local function spawnChooserRoot()
+    local playerGui = LocalPlayer.PlayerGui
+    local known = child(playerGui, "DialogApp", "Dialog", "SpawnChooserDialog")
+    if known and isActuallyVisible(known) then return known end
+    for _, gui in ipairs(playerGui:GetDescendants()) do
+        if (gui:IsA("TextLabel") or gui:IsA("TextButton")) and isActuallyVisible(gui) then
+            local text = normalizedGuiText(gui.Text)
+            if text == "chooselocation" or text == "pilihlokasi" then
+                return gui:FindFirstAncestorOfClass("ScreenGui") or gui.Parent
+            end
+        end
+    end
+end
+
+local function homeSpawnButton()
+    local chooser = spawnChooserRoot()
+    if not chooser then return nil end
+    local known = child(chooser, "Choices", "Home", "Button")
+    if known and isActuallyVisible(known) then return known end
+
+    local best, bestScore
+    for _, button in ipairs(chooser:GetDescendants()) do
+        if (button:IsA("TextButton") or button:IsA("ImageButton")) and isActuallyVisible(button)
+            and not hasNamedAncestor(button, "default") then
+            local labels = { buttonText(button) }
+            for _, descendant in ipairs(button:GetDescendants()) do
+                if descendant:IsA("TextLabel") and isActuallyVisible(descendant) then
+                    table.insert(labels, descendant.Text)
+                end
+            end
+
+            local matchesHome = false
+            for _, label in ipairs(labels) do
+                local normalized = normalizedGuiText(label)
+                if normalized == "home" or normalized == "rumah" then
+                    matchesHome = true
+                    break
+                end
+            end
+
+            if matchesHome then
+                local score = 0
+                if hasNamedAncestor(button, "home") then score += 10 end
+                if hasNamedAncestor(button, "choice") then score += 5 end
+                if hasNamedAncestor(button, "spawn") or hasNamedAncestor(button, "location") then score += 3 end
+                if not best or score > bestScore then best, bestScore = button, score end
+            end
+        end
+    end
+    return best
+end
+
+local function spawnChooserVisible()
+    return spawnChooserRoot() ~= nil
+end
+
+local function enterWorld()
+    LocalPlayer:WaitForChild("PlayerGui")
+    local playStartedAt = os.clock()
+    local playDeadline = playStartedAt + 30
+    local clickedPlay = false
+    repeat
+        local playButton = newsPlayButton()
+        if playButton then
+            clickedPlay = true
+            clickWrappedButton(playButton)
+            if firesignal then
+                pcall(firesignal, playButton.MouseButton1Click)
+                pcall(firesignal, playButton.Activated)
+            end
+            task.wait(0.75)
+            if newsPlayButton() then
+                closeNewsAppDirectly()
+                task.wait(0.25)
+            end
+            if newsPlayButton() == nil then break end
+        else
+            if os.clock() - playStartedAt >= 2
+                and ReplicatedStorage:FindFirstChild("API")
+                and newsPlayButton() == nil then
+                break
+            end
+            task.wait(0.25)
+        end
+    until os.clock() >= playDeadline or not getgenv().AutoTradeRunning
+
+    assert(newsPlayButton() == nil, "Could not close the Adopt Me news panel with Play")
+    if clickedPlay then
+        notify("Closed news panel with Play")
+    end
+
+    closeStartupPopups()
+
+    local chooserDeadline = os.clock() + 30
+    local chooserClearSince
+    repeat
+        local home = homeSpawnButton()
+        if home then
+            assert(clickWrappedButton(home), "Could not select Home")
+            waitFor("location chooser to close after selecting Home", function()
+                return not spawnChooserVisible()
+            end, 10)
+            notify("Spawned at Home")
+            return waitFor("Adopt Me API", function()
+                return ReplicatedStorage:FindFirstChild("API")
+            end, 30)
+        end
+        if not spawnChooserVisible() and ReplicatedStorage:FindFirstChild("API") then
+            chooserClearSince = chooserClearSince or os.clock()
+            if os.clock() - chooserClearSince >= 2 then
+                return ReplicatedStorage.API
+            end
+        else
+            chooserClearSince = nil
+        end
+        task.wait(0.2)
+    until os.clock() >= chooserDeadline or not getgenv().AutoTradeRunning
+
+    assert(not spawnChooserVisible(), "Could not select Home from the location chooser")
+    waitFor("Adopt Me API", function()
+        return ReplicatedStorage:FindFirstChild("API")
+    end, 30)
+end
+
+local function watchLateWorldEntry()
+    local newsWasVisible = false
+    local chooserWasVisible = false
+    while getgenv().AutoTradeRunning do
+        local playButton = newsPlayButton()
+        if playButton then
+            newsWasVisible = true
+            clickWrappedButton(playButton)
+            if firesignal then
+                pcall(firesignal, playButton.Activated)
+                pcall(firesignal, playButton.MouseButton1Click)
+            end
+            task.wait(0.35)
+            if newsPlayButton() then physicallyClickButton(playButton) end
+            task.wait(0.4)
+            if newsPlayButton() then closeNewsAppDirectly() end
+        elseif newsWasVisible then
+            newsWasVisible = false
+            notify("Closed late-loading news panel with Play")
+        end
+
+        local home = homeSpawnButton()
+        if home then
+            chooserWasVisible = true
+            clickWrappedButton(home)
+            task.wait(0.3)
+            if spawnChooserVisible() then physicallyClickButton(home) end
+            task.wait(0.35)
+        elseif chooserWasVisible then
+            chooserWasVisible = false
+            notify("Selected Home on late-loading spawn chooser")
+        end
+
+        task.wait(0.25)
+    end
+end
+
+-- ===================== ADOPT ME API / SETTINGS / INVENTORY =====================
+local API
+local function remote(name)
+    API = API or ReplicatedStorage:WaitForChild("API", 30)
+    local value = API and API:FindFirstChild(name)
+    assert(value, "Missing Adopt Me remote: " .. name)
+    return value
+end
+
+local function callRemote(name, ...)
+    local value = remote(name)
+    if value:IsA("RemoteFunction") then return value:InvokeServer(...) end
+    value:FireServer(...)
+end
+
+local ClientData
+local function loadClientData()
+    if ClientData then return ClientData end
+    local oldIdentity = getthreadidentity and getthreadidentity()
+    if setthreadidentity then setthreadidentity(2) end
+    local ok, result = pcall(function()
+        local LegacyLoad = require(ReplicatedStorage.new.modules.LegacyLoad)
+        return LegacyLoad("ClientData")
+    end)
+    if setthreadidentity and oldIdentity then setthreadidentity(oldIdentity) end
+    assert(ok, "Could not load Adopt Me ClientData: " .. tostring(result))
+    ClientData = result
+    return ClientData
+end
+
+local function playerData()
+    local data = loadClientData().get_data()
+    return data[LocalPlayer.Name] or data, data
+end
+
+local function crystalEggIds()
+    local ownData = playerData()
+    local ids = {}
+    for _, category in pairs(ownData.inventory or {}) do
+        if type(category) == "table" then
+            for inventoryKey, item in pairs(category) do
+                if type(item) == "table" and item.kind == EGG_KIND then
+                    table.insert(ids, tostring(item.unique_id or item.unique or inventoryKey))
+                end
+            end
+        end
+    end
+    table.sort(ids)
+    return ids
+end
+
+local function crystalEggCount()
+    return #crystalEggIds()
+end
+
+local function refreshEggCounter()
+    local ok, count = pcall(crystalEggCount)
+    if ok then
+        state.eggCount = count
+        if uiRefs.eggCountLabel then
+            uiRefs.eggCountLabel.Text = formatNumber(count)
+        end
+    end
+end
+
+local SettingsHelper
+local function loadSettingsHelper()
+    if SettingsHelper then return SettingsHelper end
+    local oldIdentity = getthreadidentity and getthreadidentity()
+    if setthreadidentity then setthreadidentity(2) end
+    local ok, result = pcall(function()
+        return require(ReplicatedStorage.Fsys).load("SettingsHelper")
+    end)
+    if setthreadidentity and oldIdentity then setthreadidentity(oldIdentity) end
+    assert(ok, "Could not load Adopt Me SettingsHelper: " .. tostring(result))
+    SettingsHelper = result
+    return SettingsHelper
+end
+
+local function ensureTradingEveryone()
+    -- Live SettingsDB mapping: 1 = Everyone, 2 = Friends, 3 = No One.
+    local helper = waitFor("Adopt Me settings system", function()
+        local ok, value = pcall(function()
+            return loadSettingsHelper().get_setting_client({
+                setting_id = "trade_requests",
+                use_transform = false,
+            })
+        end)
+        return ok and value ~= nil and loadSettingsHelper()
+    end, 30)
+
+    helper.set_setting_client({
+        setting_id = "trade_requests",
+        value = 1,
+    })
+    callRemote("SettingsAPI/SetSetting", "trade_requests", 1)
+
+    waitFor("Trading setting to verify as Everyone", function()
+        local clientRaw = helper.get_setting_client({
+            setting_id = "trade_requests",
+            use_transform = false,
+        })
+        local serverRaw = helper.get_setting_server({
+            setting_id = "trade_requests",
+            use_transform = false,
+        })
+        local clientText = helper.get_setting_client({
+            setting_id = "trade_requests",
+            use_transform = true,
+        })
+        return clientRaw == 1 and serverRaw == 1 and clientText == "Everyone"
+    end, 15)
+    notify("Trading verified: Everyone")
+end
+
+-- ===================== ACCEPTING & SENDING TRADES =====================
+local function currentTrade()
+    local ownData, allData = playerData()
+    return ownData.trade or allData.trade
+end
+
+local function tradeStage()
+    local trade = currentTrade()
+    return trade and trade.current_stage or nil
+end
+
+local function negotiationVisible()
+    local app = LocalPlayer.PlayerGui:FindFirstChild("TradeApp")
+    local frame = app and app:FindFirstChild("Frame")
+    local negotiation = frame and frame:FindFirstChild("NegotiationFrame")
+    return app and app.Enabled and frame and frame.Visible
+        and negotiation and negotiation.Visible or false
+end
+
+local function offeredItemCount(playerName)
+    local trade = currentTrade()
+    if type(trade) ~= "table" then return 0 end
+    local offer
+    if playerName then
+        local senderName = trade.sender and trade.sender.Name
+        offer = senderName == playerName and trade.sender_offer or trade.recipient_offer
+    else
+        local isLocalSender = trade.sender and trade.sender.Name == LocalPlayer.Name
+        offer = isLocalSender and trade.recipient_offer or trade.sender_offer
+    end
+    local items = type(offer) == "table" and offer.items or nil
+    local count = 0
+    for _ in pairs(type(items) == "table" and items or {}) do count += 1 end
+    return count
+end
+
+local function dismissButtonIfPresent(text, seconds)
+    local deadline = os.clock() + seconds
+    repeat
+        local button = visibleDialogButton(text)
+        if button then
+            assert(clickWrappedButton(button), "Could not click dialog button: " .. text)
+            return true
+        end
+        task.wait(0.1)
+    until os.clock() >= deadline
+    return false
+end
+
+local function clearConfirmationWarnings()
+    local deadline = os.clock() + 8
+    local sawWarning = false
+    repeat
+        local button = visibleDialogButton("Next") or visibleDialogButton("I understand")
+        if button then
+            sawWarning = true
+            assert(clickWrappedButton(button), "Could not advance confirmation warning")
+            task.wait(0.3)
+        elseif sawWarning or os.clock() > deadline - 6 then
+            return
+        else
+            task.wait(0.1)
+        end
+    until os.clock() >= deadline
+end
+
+local function waitForStableOffer(senderName)
+    local lastCount = -1
+    local changedAt = os.clock()
+    repeat
+        local count = offeredItemCount(senderName)
+        if count ~= lastCount then
+            lastCount = count
+            changedAt = os.clock()
+        end
+        if (not REQUIRE_ITEMS or count > 0) and os.clock() - changedAt >= OFFER_COOLDOWN then
+            return count
+        end
+        assert(tradeStage() == "negotiation", "Trade left negotiation before the offer stabilized")
+        task.wait(0.2)
+    until not getgenv().AutoTradeRunning
+    error("Stopped while waiting for offer")
+end
+
+local function waitForTradeClosed()
+    waitFor("completed trade", function() return currentTrade() == nil end, 60)
+end
+
+local function receiveOneTrade(expectedSender)
+    local acceptButton = visibleDialogButton("Accept")
+    if not acceptButton then return nil end
+
+    setStatus("Accepting incoming trade...", Color3.fromRGB(125, 211, 252))
+    assert(clickWrappedButton(acceptButton), "Could not accept the trade request")
+    dismissButtonIfPresent("Okay", 3)
+    waitFor("negotiation window", function()
+        return tradeStage() == "negotiation" and negotiationVisible()
+    end)
+
+    setStatus("Waiting for offer to stabilize...", Color3.fromRGB(253, 224, 71))
+    local offered = waitForStableOffer(expectedSender)
+    setStatus(("Accepting %d item(s)..."):format(offered), Color3.fromRGB(125, 211, 252))
+    callRemote("TradeAPI/AcceptNegotiation")
+    waitFor("confirmation stage", function() return tradeStage() == "confirmation" end)
+    clearConfirmationWarnings()
+    callRemote("TradeAPI/ConfirmTrade")
+    waitForTradeClosed()
+    closePetDiscoveryApp()
+    task.wait(1)
+    closePetDiscoveryApp()
+    refreshEggCounter()
+
+    setStatus(("Accepted trade (%d item(s))"):format(offered), Color3.fromRGB(134, 239, 172))
+    notify(("Accepted trade (%d item(s))"):format(offered))
+    return offered
+end
+
+local function sendEggBatch(receiver, batchSize)
+    local beforeIds = crystalEggIds()
+    assert(#beforeIds >= batchSize,
+        ("Need %d Crystal Eggs for this batch; found %d"):format(batchSize, #beforeIds))
+
+    callRemote("TradeAPI/SendTradeRequest", receiver)
+    waitFor("receiver to accept trade", function()
+        return tradeStage() == "negotiation" and negotiationVisible()
+    end, 60)
+    task.wait(0.5)
+
+    for index = 1, batchSize do
+        callRemote("TradeAPI/AddItemToOffer", beforeIds[index])
+        task.wait(0.15)
+    end
+
+    task.wait(OFFER_COOLDOWN)
+    callRemote("TradeAPI/AcceptNegotiation")
+    waitFor("confirmation stage", function() return tradeStage() == "confirmation" end)
+    clearConfirmationWarnings()
+    callRemote("TradeAPI/ConfirmTrade")
+    waitForTradeClosed()
+    task.wait(1)
+
+    local sent = #beforeIds - crystalEggCount()
+    refreshEggCounter()
+    assert(sent == batchSize,
+        ("Sender verification failed: expected -%d, got -%d"):format(batchSize, sent))
+    return sent
+end
+
+local updateActionButtons -- forward declaration
+
+local function sendCrystalEggs(receiverName, targetAmount)
+    if state.sending then
+        setStatus("Already sending a batch!", Color3.fromRGB(251, 191, 36))
+        return false
+    end
+    targetAmount = math.floor(tonumber(targetAmount) or DEFAULT_SEND_AMOUNT)
+    if targetAmount <= 0 then
+        setStatus("Amount must be greater than 0", Color3.fromRGB(248, 113, 113))
+        return false
+    end
+    if not receiverName or receiverName == "" then
+        setStatus("Select a user first", Color3.fromRGB(248, 113, 113))
+        return false
+    end
+
+    local available = crystalEggCount()
+    if available < targetAmount then
+        setStatus(("Not enough eggs (%d / %d)"):format(available, targetAmount), Color3.fromRGB(248, 113, 113))
+        return false
+    end
+
+    state.sending = true
+    state.cancelSend = false
+    if updateActionButtons then updateActionButtons() end
+
+    local sent = 0
+    local totalBatches = math.ceil(targetAmount / MAX_TRADE_SLOTS)
+    local batchIndex = 0
+
+    local ok, err = pcall(function()
+        while sent < targetAmount and getgenv().AutoTradeRunning and not state.cancelSend do
+            local receiver = Players:FindFirstChild(receiverName)
+            assert(receiver, "Player left server: " .. receiverName)
+
+            batchIndex += 1
+            local batchSize = math.min(MAX_TRADE_SLOTS, targetAmount - sent)
+            setStatus(("Batch %d/%d: sending %d to %s (%d/%d)"):format(
+                batchIndex, totalBatches, batchSize, receiverName, sent, targetAmount
+            ), Color3.fromRGB(125, 211, 252))
+
+            sent += sendEggBatch(receiver, batchSize)
+            if sent < targetAmount and not state.cancelSend then
+                task.wait(1)
+            end
+        end
+    end)
+
+    state.sending = false
+    refreshEggCounter()
+    if updateActionButtons then updateActionButtons() end
+
+    if not ok then
+        warn("[AutoTrade] Send failed: " .. tostring(err))
+        setStatus("Send error: " .. tostring(err), Color3.fromRGB(248, 113, 113))
+        notify("Send stopped at " .. sent .. "/" .. targetAmount .. ": " .. tostring(err), 8)
+        return false
+    elseif state.cancelSend then
+        state.cancelSend = false
+        setStatus(("Cancelled (%d/%d sent)"):format(sent, targetAmount), Color3.fromRGB(251, 191, 36))
+        notify(("Cancelled after sending %d/%d Crystal Eggs"):format(sent, targetAmount))
+        return false
+    else
+        setStatus(("Sent %d/%d Crystal Eggs to %s"):format(sent, targetAmount, receiverName), Color3.fromRGB(134, 239, 172))
+        notify(("Sent %d Crystal Eggs to %s!"):format(sent, receiverName))
+        return true
+    end
+end
+
+-- ===================== TRADING UI =====================
+local function getUiParent()
+    return LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local function destroyExistingUIs()
+    local containers = { LocalPlayer:FindFirstChild("PlayerGui") }
+    if gethui then
+        local ok, hui = pcall(gethui)
+        if ok and hui then table.insert(containers, hui) end
+    end
+    pcall(function()
+        if CoreGui then table.insert(containers, CoreGui) end
+    end)
+    for _, container in ipairs(containers) do
+        pcall(function()
+            local old = container and container:FindFirstChild(UI_NAME)
+            if old then old:Destroy() end
+        end)
+    end
+end
+
+local function makeCorner(parent, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or 8)
+    corner.Parent = parent
+    return corner
+end
+
+local function makeStroke(parent, color, thickness)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color or Color3.fromRGB(58, 66, 86)
+    stroke.Thickness = thickness or 1
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = parent
+    return stroke
+end
+
+local function buildUI()
+    destroyExistingUIs()
+    local parent = getUiParent()
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = UI_NAME
+    gui.ResetOnSpawn = false
+    gui.DisplayOrder = 999
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.Parent = parent
+    uiRefs.gui = gui
+
+    local main = Instance.new("Frame")
+    main.Name = "Main"
+    main.Size = UDim2.new(0, 310, 0, 390)
+    main.Position = UDim2.new(1, -330, 0.5, -195)
+    main.BackgroundColor3 = Color3.fromRGB(18, 22, 31)
+    main.BorderSizePixel = 0
+    main.Active = true
+    main.Parent = gui
+    makeCorner(main, 12)
+    makeStroke(main, Color3.fromRGB(52, 62, 82), 1.5)
+    uiRefs.main = main
+
+    -- Title bar (draggable)
+    local header = Instance.new("Frame")
+    header.Name = "Header"
+    header.Size = UDim2.new(1, 0, 0, 38)
+    header.BackgroundColor3 = Color3.fromRGB(25, 31, 44)
+    header.BorderSizePixel = 0
+    header.Parent = main
+    makeCorner(header, 12)
+
+    local headerFlat = Instance.new("Frame")
+    headerFlat.Size = UDim2.new(1, 0, 0, 12)
+    headerFlat.Position = UDim2.new(0, 0, 1, -12)
+    headerFlat.BackgroundColor3 = Color3.fromRGB(25, 31, 44)
+    headerFlat.BorderSizePixel = 0
+    headerFlat.Parent = header
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -76, 1, 0)
+    title.Position = UDim2.new(0, 12, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.Text = "Crystal Egg Trader"
+    title.TextSize = 14
+    title.TextColor3 = Color3.fromRGB(241, 245, 249)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = header
+
+    local minBtn = Instance.new("TextButton")
+    minBtn.Size = UDim2.new(0, 26, 0, 24)
+    minBtn.Position = UDim2.new(1, -60, 0.5, -12)
+    minBtn.BackgroundColor3 = Color3.fromRGB(38, 46, 64)
+    minBtn.Font = Enum.Font.GothamBold
+    minBtn.Text = "-"
+    minBtn.TextSize = 16
+    minBtn.TextColor3 = Color3.fromRGB(226, 232, 240)
+    minBtn.AutoButtonColor = true
+    minBtn.Parent = header
+    makeCorner(minBtn, 6)
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 26, 0, 24)
+    closeBtn.Position = UDim2.new(1, -30, 0.5, -12)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(153, 27, 27)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.Text = "X"
+    closeBtn.TextSize = 12
+    closeBtn.TextColor3 = Color3.fromRGB(254, 226, 226)
+    closeBtn.AutoButtonColor = true
+    closeBtn.Parent = header
+    makeCorner(closeBtn, 6)
+
+    -- Drag support
+    local dragging = false
+    local dragStart, startPos
+    table.insert(uiConnections, header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = main.Position
+        end
+    end))
+    table.insert(uiConnections, UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            main.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end))
+    table.insert(uiConnections, UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end))
+
+    -- Body container
+    local body = Instance.new("Frame")
+    body.Name = "Body"
+    body.Size = UDim2.new(1, -24, 1, -50)
+    body.Position = UDim2.new(0, 12, 0, 44)
+    body.BackgroundTransparency = 1
+    body.Parent = main
+    uiRefs.body = body
+
+    local minimized = false
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        body.Visible = not minimized
+        main.Size = minimized and UDim2.new(0, 310, 0, 38) or UDim2.new(0, 310, 0, 390)
+        minBtn.Text = minimized and "+" or "-"
+    end)
+
+    -- Crystal Egg Counter Card
+    local counterCard = Instance.new("Frame")
+    counterCard.Size = UDim2.new(1, 0, 0, 54)
+    counterCard.BackgroundColor3 = Color3.fromRGB(27, 34, 49)
+    counterCard.BorderSizePixel = 0
+    counterCard.Parent = body
+    makeCorner(counterCard, 10)
+    makeStroke(counterCard, Color3.fromRGB(56, 189, 248), 1)
+
+    local eggTitle = Instance.new("TextLabel")
+    eggTitle.Size = UDim2.new(0.55, -12, 1, 0)
+    eggTitle.Position = UDim2.new(0, 12, 0, 0)
+    eggTitle.BackgroundTransparency = 1
+    eggTitle.Font = Enum.Font.GothamMedium
+    eggTitle.Text = "Crystal Eggs"
+    eggTitle.TextSize = 13
+    eggTitle.TextColor3 = Color3.fromRGB(148, 163, 184)
+    eggTitle.TextXAlignment = Enum.TextXAlignment.Left
+    eggTitle.Parent = counterCard
+
+    local eggCountLabel = Instance.new("TextLabel")
+    eggCountLabel.Size = UDim2.new(0.45, -12, 1, 0)
+    eggCountLabel.Position = UDim2.new(0.55, 0, 0, 0)
+    eggCountLabel.BackgroundTransparency = 1
+    eggCountLabel.Font = Enum.Font.GothamBlack
+    eggCountLabel.Text = "..."
+    eggCountLabel.TextSize = 22
+    eggCountLabel.TextColor3 = Color3.fromRGB(56, 189, 248)
+    eggCountLabel.TextXAlignment = Enum.TextXAlignment.Right
+    eggCountLabel.Parent = counterCard
+    uiRefs.eggCountLabel = eggCountLabel
+
+    -- Auto-Accept Toggle Row
+    local acceptRow = Instance.new("Frame")
+    acceptRow.Size = UDim2.new(1, 0, 0, 34)
+    acceptRow.Position = UDim2.new(0, 0, 0, 62)
+    acceptRow.BackgroundColor3 = Color3.fromRGB(25, 31, 44)
+    acceptRow.BorderSizePixel = 0
+    acceptRow.Parent = body
+    makeCorner(acceptRow, 8)
+    makeStroke(acceptRow, Color3.fromRGB(45, 55, 74), 1)
+
+    local acceptLabel = Instance.new("TextLabel")
+    acceptLabel.Size = UDim2.new(1, -84, 1, 0)
+    acceptLabel.Position = UDim2.new(0, 10, 0, 0)
+    acceptLabel.BackgroundTransparency = 1
+    acceptLabel.Font = Enum.Font.GothamMedium
+    acceptLabel.Text = "Auto-Accept Trades"
+    acceptLabel.TextSize = 12
+    acceptLabel.TextColor3 = Color3.fromRGB(226, 232, 240)
+    acceptLabel.TextXAlignment = Enum.TextXAlignment.Left
+    acceptLabel.Parent = acceptRow
+
+    local acceptToggle = Instance.new("TextButton")
+    acceptToggle.Size = UDim2.new(0, 64, 0, 24)
+    acceptToggle.Position = UDim2.new(1, -70, 0.5, -12)
+    acceptToggle.Font = Enum.Font.GothamBold
+    acceptToggle.TextSize = 11
+    acceptToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    acceptToggle.Parent = acceptRow
+    makeCorner(acceptToggle, 6)
+
+    local function syncAcceptToggle()
+        if state.autoAccept then
+            acceptToggle.Text = "ON"
+            acceptToggle.BackgroundColor3 = Color3.fromRGB(22, 163, 74)
+        else
+            acceptToggle.Text = "OFF"
+            acceptToggle.BackgroundColor3 = Color3.fromRGB(71, 85, 105)
+        end
+    end
+    syncAcceptToggle()
+    acceptToggle.MouseButton1Click:Connect(function()
+        state.autoAccept = not state.autoAccept
+        syncAcceptToggle()
+        setStatus(state.autoAccept and "Auto-Accept enabled" or "Auto-Accept disabled")
+    end)
+
+    -- Target User Section
+    local userHeader = Instance.new("Frame")
+    userHeader.Size = UDim2.new(1, 0, 0, 22)
+    userHeader.Position = UDim2.new(0, 0, 0, 104)
+    userHeader.BackgroundTransparency = 1
+    userHeader.Parent = body
+
+    local userTitle = Instance.new("TextLabel")
+    userTitle.Size = UDim2.new(1, -68, 1, 0)
+    userTitle.BackgroundTransparency = 1
+    userTitle.Font = Enum.Font.GothamBold
+    userTitle.Text = "Select User to Send To"
+    userTitle.TextSize = 12
+    userTitle.TextColor3 = Color3.fromRGB(148, 163, 184)
+    userTitle.TextXAlignment = Enum.TextXAlignment.Left
+    userTitle.Parent = userHeader
+
+    local refreshBtn = Instance.new("TextButton")
+    refreshBtn.Size = UDim2.new(0, 62, 0, 20)
+    refreshBtn.Position = UDim2.new(1, -62, 0, 1)
+    refreshBtn.BackgroundColor3 = Color3.fromRGB(38, 46, 64)
+    refreshBtn.Font = Enum.Font.GothamMedium
+    refreshBtn.Text = "Refresh"
+    refreshBtn.TextSize = 11
+    refreshBtn.TextColor3 = Color3.fromRGB(203, 213, 225)
+    refreshBtn.Parent = userHeader
+    makeCorner(refreshBtn, 5)
+
+    local playerList = Instance.new("ScrollingFrame")
+    playerList.Size = UDim2.new(1, 0, 0, 114)
+    playerList.Position = UDim2.new(0, 0, 0, 128)
+    playerList.BackgroundColor3 = Color3.fromRGB(14, 17, 25)
+    playerList.BorderSizePixel = 0
+    playerList.ScrollBarThickness = 5
+    playerList.ScrollBarImageColor3 = Color3.fromRGB(71, 85, 105)
+    playerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+    playerList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    playerList.Parent = body
+    makeCorner(playerList, 8)
+    makeStroke(playerList, Color3.fromRGB(45, 55, 74), 1)
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 4)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = playerList
+
+    local listPad = Instance.new("UIPadding")
+    listPad.PaddingTop = UDim.new(0, 6)
+    listPad.PaddingBottom = UDim.new(0, 6)
+    listPad.PaddingLeft = UDim.new(0, 6)
+    listPad.PaddingRight = UDim.new(0, 6)
+    listPad.Parent = playerList
+
+    -- Amount + Send Controls
+    local amountRow = Instance.new("Frame")
+    amountRow.Size = UDim2.new(1, 0, 0, 32)
+    amountRow.Position = UDim2.new(0, 0, 0, 250)
+    amountRow.BackgroundTransparency = 1
+    amountRow.Parent = body
+
+    local amountLabel = Instance.new("TextLabel")
+    amountLabel.Size = UDim2.new(0, 64, 1, 0)
+    amountLabel.BackgroundTransparency = 1
+    amountLabel.Font = Enum.Font.GothamMedium
+    amountLabel.Text = "Amount:"
+    amountLabel.TextSize = 12
+    amountLabel.TextColor3 = Color3.fromRGB(203, 213, 225)
+    amountLabel.TextXAlignment = Enum.TextXAlignment.Left
+    amountLabel.Parent = amountRow
+
+    local amountBox = Instance.new("TextBox")
+    amountBox.Size = UDim2.new(0, 74, 0, 28)
+    amountBox.Position = UDim2.new(0, 66, 0.5, -14)
+    amountBox.BackgroundColor3 = Color3.fromRGB(14, 17, 25)
+    amountBox.Font = Enum.Font.GothamBold
+    amountBox.Text = tostring(DEFAULT_SEND_AMOUNT)
+    amountBox.PlaceholderText = "100"
+    amountBox.TextSize = 13
+    amountBox.TextColor3 = Color3.fromRGB(248, 250, 252)
+    amountBox.ClearTextOnFocus = false
+    amountBox.Parent = amountRow
+    makeCorner(amountBox, 6)
+    makeStroke(amountBox, Color3.fromRGB(58, 66, 86), 1)
+    uiRefs.amountBox = amountBox
+
+    local preset100 = Instance.new("TextButton")
+    preset100.Size = UDim2.new(0, 44, 0, 26)
+    preset100.Position = UDim2.new(0, 148, 0.5, -13)
+    preset100.BackgroundColor3 = Color3.fromRGB(38, 46, 64)
+    preset100.Font = Enum.Font.GothamBold
+    preset100.Text = "100"
+    preset100.TextSize = 11
+    preset100.TextColor3 = Color3.fromRGB(226, 232, 240)
+    preset100.Parent = amountRow
+    makeCorner(preset100, 6)
+
+    local preset18 = Instance.new("TextButton")
+    preset18.Size = UDim2.new(0, 38, 0, 26)
+    preset18.Position = UDim2.new(0, 198, 0.5, -13)
+    preset18.BackgroundColor3 = Color3.fromRGB(38, 46, 64)
+    preset18.Font = Enum.Font.GothamBold
+    preset18.Text = "18"
+    preset18.TextSize = 11
+    preset18.TextColor3 = Color3.fromRGB(226, 232, 240)
+    preset18.Parent = amountRow
+    makeCorner(preset18, 6)
+
+    local sendBtn = Instance.new("TextButton")
+    sendBtn.Size = UDim2.new(1, 0, 0, 34)
+    sendBtn.Position = UDim2.new(0, 0, 0, 288)
+    sendBtn.BackgroundColor3 = Color3.fromRGB(37, 99, 235)
+    sendBtn.Font = Enum.Font.GothamBold
+    sendBtn.Text = "Send 100 Crystal Eggs"
+    sendBtn.TextSize = 13
+    sendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sendBtn.Parent = body
+    makeCorner(sendBtn, 8)
+    uiRefs.sendBtn = sendBtn
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, 0, 0, 18)
+    statusLabel.Position = UDim2.new(0, 0, 1, -18)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Font = Enum.Font.GothamMedium
+    statusLabel.Text = state.statusText
+    statusLabel.TextSize = 11
+    statusLabel.TextColor3 = Color3.fromRGB(205, 214, 230)
+    statusLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    statusLabel.Parent = body
+    uiRefs.statusLabel = statusLabel
+
+    local function parsedAmount()
+        local num = math.floor(tonumber(amountBox.Text) or 0)
+        return num > 0 and num or DEFAULT_SEND_AMOUNT
+    end
+
+    updateActionButtons = function()
+        if state.sending then
+            sendBtn.Text = "Cancel Send"
+            sendBtn.BackgroundColor3 = Color3.fromRGB(220, 38, 38)
+        else
+            local amt = parsedAmount()
+            if state.selectedPlayer then
+                sendBtn.Text = ("Send %d to %s"):format(amt, state.selectedPlayer)
+                sendBtn.BackgroundColor3 = Color3.fromRGB(37, 99, 235)
+            else
+                sendBtn.Text = ("Select a User (Send %d)"):format(amt)
+                sendBtn.BackgroundColor3 = Color3.fromRGB(51, 65, 85)
+            end
+        end
+    end
+
+    local function rebuildPlayerList()
+        for _, item in ipairs(playerList:GetChildren()) do
+            if item:IsA("TextButton") or item:IsA("TextLabel") then
+                item:Destroy()
+            end
+        end
+
+        local others = {}
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                table.insert(others, plr)
+            end
+        end
+        table.sort(others, function(a, b)
+            return string.lower(a.Name) < string.lower(b.Name)
+        end)
+
+        -- Clear selection if selected player left
+        if state.selectedPlayer and not Players:FindFirstChild(state.selectedPlayer) then
+            state.selectedPlayer = nil
+        end
+        -- Auto-select if there's only 1 other player
+        if not state.selectedPlayer and #others == 1 then
+            state.selectedPlayer = others[1].Name
+        end
+
+        if #others == 0 then
+            local empty = Instance.new("TextLabel")
+            empty.Size = UDim2.new(1, 0, 0, 26)
+            empty.BackgroundTransparency = 1
+            empty.Font = Enum.Font.GothamMedium
+            empty.Text = "No other players in server"
+            empty.TextSize = 12
+            empty.TextColor3 = Color3.fromRGB(100, 116, 139)
+            empty.Parent = playerList
+        else
+            for idx, plr in ipairs(others) do
+                local selected = (state.selectedPlayer == plr.Name)
+                local row = Instance.new("TextButton")
+                row.Name = plr.Name
+                row.LayoutOrder = idx
+                row.Size = UDim2.new(1, 0, 0, 26)
+                row.BackgroundColor3 = selected and Color3.fromRGB(30, 64, 175) or Color3.fromRGB(27, 34, 49)
+                row.Font = selected and Enum.Font.GothamBold or Enum.Font.GothamMedium
+                row.Text = plr.DisplayName ~= plr.Name
+                    and ("  %s (@%s)"):format(plr.DisplayName, plr.Name)
+                    or ("  %s"):format(plr.Name)
+                row.TextSize = 12
+                row.TextColor3 = selected and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(203, 213, 225)
+                row.TextXAlignment = Enum.TextXAlignment.Left
+                row.TextTruncate = Enum.TextTruncate.AtEnd
+                row.Parent = playerList
+                makeCorner(row, 6)
+
+                row.MouseButton1Click:Connect(function()
+                    state.selectedPlayer = plr.Name
+                    rebuildPlayerList()
+                    updateActionButtons()
+                end)
+            end
+        end
+
+        updateActionButtons()
+    end
+
+    preset100.MouseButton1Click:Connect(function()
+        amountBox.Text = "100"
+        updateActionButtons()
+    end)
+    preset18.MouseButton1Click:Connect(function()
+        amountBox.Text = "18"
+        updateActionButtons()
+    end)
+    amountBox:GetPropertyChangedSignal("Text"):Connect(function()
+        updateActionButtons()
+    end)
+    refreshBtn.MouseButton1Click:Connect(function()
+        rebuildPlayerList()
+        refreshEggCounter()
+    end)
+
+    sendBtn.MouseButton1Click:Connect(function()
+        if state.sending then
+            state.cancelSend = true
+            setStatus("Cancelling after current batch...", Color3.fromRGB(251, 191, 36))
+            return
+        end
+        if not state.ready then
+            setStatus("Still finishing startup...", Color3.fromRGB(251, 191, 36))
+            return
+        end
+        local target = state.selectedPlayer
+        local amt = parsedAmount()
+        task.spawn(sendCrystalEggs, target, amt)
+    end)
+
+    closeBtn.MouseButton1Click:Connect(function()
+        if getgenv().AutoTrade and getgenv().AutoTrade.stop then
+            getgenv().AutoTrade.stop()
+        end
+    end)
+
+    table.insert(uiConnections, Players.PlayerAdded:Connect(rebuildPlayerList))
+    table.insert(uiConnections, Players.PlayerRemoving:Connect(function()
+        task.defer(rebuildPlayerList)
+    end))
+
+    rebuildPlayerList()
+end
+
+-- Expose global controls
+getgenv().AutoTrade = {
+    crystalEggCount = crystalEggCount,
+    crystalEggIds = crystalEggIds,
+    receiveOneTrade = receiveOneTrade,
+    sendCrystalEggs = sendCrystalEggs,
+    ensureTradingEveryone = ensureTradingEveryone,
+    closeStartupPopups = closeStartupPopups,
+    closePetDiscoveryApp = closePetDiscoveryApp,
+    closeStarterPackPopup = closeStarterPackPopup,
+    stop = function()
+        getgenv().AutoTradeRunning = false
+        state.cancelSend = true
+        for _, conn in ipairs(uiConnections) do
+            pcall(function() conn:Disconnect() end)
+        end
+        table.clear(uiConnections)
+        if uiRefs.gui then
+            pcall(function() uiRefs.gui:Destroy() end)
+            uiRefs.gui = nil
+        end
+        notify("Stopped Crystal Egg Trader")
+    end,
+}
+
+-- ===================== STARTUP SEQUENCE =====================
+buildUI()
+setStatus("Clearing startup popups...", Color3.fromRGB(253, 224, 71))
+
+task.spawn(watchLateWorldEntry)
+task.spawn(watchLateStarRewardsPopup)
+enterWorld()
+loadClientData()
+closeStartupPopups()
+
+setStatus("Setting Trading = Everyone...", Color3.fromRGB(253, 224, 71))
+ensureTradingEveryone()
+refreshEggCounter()
+
+state.ready = true
+if updateActionButtons then updateActionButtons() end
+setStatus("Ready • Trading: Everyone", Color3.fromRGB(134, 239, 172))
+
+-- Live Crystal Egg count updater
+task.spawn(function()
+    while getgenv().AutoTradeRunning do
+        refreshEggCounter()
+        task.wait(1.5)
+    end
+end)
+
+-- Auto-Accept background loop (pauses while actively sending)
+task.spawn(function()
+    while getgenv().AutoTradeRunning do
+        if state.autoAccept and not state.sending then
+            local ok, err = pcall(receiveOneTrade)
+            if not ok and getgenv().AutoTradeRunning then
+                warn("[AutoTrade] Accept error: " .. tostring(err))
+                setStatus("Accept error: " .. tostring(err), Color3.fromRGB(248, 113, 113))
+                task.wait(2)
+            end
+        end
+        task.wait(0.25)
+    end
+end)
